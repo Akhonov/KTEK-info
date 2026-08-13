@@ -1509,6 +1509,26 @@
             to { box-shadow: 0 0 16px #38bdf8, 0 0 24px #38bdf8; }
         }
 
+        /* Premium authentication gateway */
+        .ktek-login-overlay{overflow:hidden;padding:28px;background:radial-gradient(circle at 12% 18%,rgba(39,230,168,.19),transparent 29%),radial-gradient(circle at 88% 82%,rgba(32,126,255,.2),transparent 31%),linear-gradient(135deg,#061217,#0a2229 45%,#07171e);transition:opacity .42s ease,visibility .42s ease}
+        .ktek-login-overlay::before{content:"";position:absolute;inset:-30%;opacity:.2;background-image:linear-gradient(rgba(121,255,217,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(121,255,217,.12) 1px,transparent 1px);background-size:58px 58px;transform:perspective(700px) rotateX(62deg) translateY(22%);transform-origin:center bottom;animation:loginGrid 14s linear infinite}
+        .ktek-login-overlay::after{content:"";position:absolute;width:520px;height:520px;left:50%;top:50%;border:1px solid rgba(104,244,205,.12);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 100px rgba(104,244,205,.025),0 0 0 210px rgba(104,244,205,.018);pointer-events:none}
+        .ktek-login-overlay.is-leaving{opacity:0;visibility:hidden}
+        @keyframes loginGrid{to{background-position:0 58px,58px 0}}
+        .ktek-login-card.login-premium{position:relative;z-index:1;display:grid;grid-template-columns:1.12fr .88fr;width:min(940px,100%);max-width:940px;min-height:570px;padding:0;overflow:hidden;border:1px solid rgba(169,255,229,.16);border-radius:30px;background:rgba(9,26,33,.82);box-shadow:0 38px 110px rgba(0,0,0,.56),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(30px)}
+        .login-showcase{position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:46px;overflow:hidden;background:linear-gradient(150deg,rgba(18,67,71,.86),rgba(7,32,40,.9))}
+        .login-showcase::after{content:"";position:absolute;right:-115px;bottom:-125px;width:390px;height:390px;border:56px solid rgba(101,244,202,.07);border-radius:50%}
+        .login-logo{display:flex;align-items:center;gap:12px;color:#effffb;font-size:13px;font-weight:900;letter-spacing:.14em}.login-logo__mark{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;color:#082d27;background:linear-gradient(145deg,#8affdc,#32d6a7);box-shadow:0 10px 28px rgba(50,214,167,.3)}.login-logo__mark svg{width:24px;height:24px}
+        .login-hero{position:relative;z-index:1}.login-eyebrow{display:inline-flex;align-items:center;gap:8px;margin-bottom:17px;color:#7cf1cf;font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}.login-eyebrow::before{content:"";width:22px;height:2px;background:#66eac5}.login-hero h1{max-width:430px;margin:0;color:#f4fffc;font-size:clamp(31px,3.4vw,48px);line-height:1.03;letter-spacing:-.045em}.login-hero p{max-width:410px;margin:18px 0 0;color:#a9c7c3;font-size:13px;line-height:1.7}
+        .login-features{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.login-feature{padding:12px;border:1px solid rgba(173,255,231,.1);border-radius:13px;background:rgba(255,255,255,.045)}.login-feature strong{display:block;color:#eafff8;font-size:14px}.login-feature span{display:block;margin-top:3px;color:#7fa19c;font-size:9px}
+        .login-form-side{display:flex;flex-direction:column;justify-content:center;padding:46px 42px;background:rgba(8,20,27,.72)}.login-form-side .ktek-login-head{text-align:left;margin-bottom:27px}.login-form-side .ktek-login-title{font-size:25px;letter-spacing:-.025em}.login-form-side .ktek-login-sub{margin-top:8px;color:#8da6a7;font-size:12px;line-height:1.5}.login-form-side .ktek-form-group{margin-bottom:17px}.login-form-side .ktek-form-label{display:block;margin-bottom:8px;color:#bad0ce;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+        .login-input-wrap{position:relative}.login-input-wrap>svg{position:absolute;z-index:1;left:14px;top:50%;width:18px;height:18px;color:#6e918d;transform:translateY(-50%);pointer-events:none}.login-form-side .ktek-input{width:100%;height:50px;padding:0 44px;border:1px solid rgba(156,203,197,.2);border-radius:13px;outline:0;background:rgba(255,255,255,.055);color:#fff;font:inherit;font-size:13px}.login-form-side .ktek-input:focus{border-color:#5ee7bf;box-shadow:0 0 0 4px rgba(94,231,191,.1)}
+        .login-password-toggle{position:absolute;z-index:2;right:8px;top:50%;width:34px;height:34px;display:grid;place-items:center;border:0;border-radius:9px;color:#759793;background:transparent;transform:translateY(-50%);cursor:pointer}.login-password-toggle:hover{color:#7ef0cf;background:rgba(126,240,207,.08)}.login-password-toggle svg{width:18px;height:18px}
+        .login-form-side .ktek-btn-primary{height:51px;margin-top:8px;border-radius:13px;display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(120deg,#67edc6,#24c897);color:#062b23;font-size:13px;box-shadow:0 12px 30px rgba(36,200,151,.25)}.login-form-side .ktek-btn-primary:hover{transform:translateY(-2px);box-shadow:0 17px 35px rgba(36,200,151,.32)}
+        .login-submit-spinner{width:16px;height:16px;border:2px solid rgba(6,43,35,.25);border-top-color:#062b23;border-radius:50%;animation:loginSpin .7s linear infinite}@keyframes loginSpin{to{transform:rotate(360deg)}}
+        .login-security{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:19px;color:#647f7d;font-size:10px}.login-security svg{width:13px;height:13px;color:#4fd8b2}.login-system-status{display:flex;align-items:center;gap:7px;margin-bottom:22px;color:#71918d;font-size:10px}.login-system-status i{width:7px;height:7px;border-radius:50%;background:#54e3b9;box-shadow:0 0 0 5px rgba(84,227,185,.1)}
+        @media(max-width:760px){.ktek-login-overlay{padding:12px}.ktek-login-card.login-premium{grid-template-columns:1fr;min-height:0;max-width:430px}.login-showcase{padding:25px 27px}.login-hero h1{font-size:28px}.login-hero p,.login-features{display:none}.login-logo{margin-bottom:35px}.login-form-side{padding:30px 27px 34px}}
+
     </style>
 </head>
 <body>
@@ -1534,29 +1554,24 @@
     </div>
 
     <!-- ===== FIREBASE AUTHENTICATION SCREEN ===== -->
-    <div id="ktekLoginOverlay" class="ktek-login-overlay">
-        <div class="ktek-login-card">
-            <div class="ktek-login-head">
-                <h1 class="ktek-login-title">КТЭК Мониторинг</h1>
-                <p class="ktek-login-sub">Цифровой Двойник Теплосетей Костаная</p>
-            </div>
-            <form id="ktekLoginForm">
-                <div class="ktek-error-box" id="ktekLoginError"></div>
-                <div class="ktek-form-group">
-                    <label class="ktek-form-label">Email оператора / инженера</label>
-                    <input id="ktekLoginEmail" type="email" class="ktek-input" placeholder="admin@ktek.kz" required autocomplete="email" />
-                </div>
-                <div class="ktek-form-group">
-                    <label class="ktek-form-label">Пароль доступа</label>
-                    <input id="ktekLoginPassword" type="password" class="ktek-input" placeholder="••••••••" required autocomplete="current-password" />
-                </div>
-                <button type="submit" id="ktekLoginSubmitBtn" class="ktek-btn-primary">
-                    Войти в систему
-                </button>
-            </form>
-            <div style="margin-top:16px;text-align:center;font-size:11px;color:#64748b;">
-                Доступные роли: Администратор, Диспетчер, Выездные бригады
-            </div>
+    <div id="ktekLoginOverlay" class="ktek-login-overlay" role="dialog" aria-modal="true" aria-labelledby="ktekLoginTitle">
+        <div class="ktek-login-card login-premium">
+            <section class="login-showcase">
+                <div class="login-logo"><span class="login-logo__mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19V9l5 3V8l5 3V5h4v8l2 1v5H4Z"/><path d="M8 16h2m3 0h2m2-14h3" stroke-linecap="round"/></svg></span><span>КТЭК · DIGITAL TWIN</span></div>
+                <div class="login-hero"><span class="login-eyebrow">Единый диспетчерский центр</span><h1>Теплосеть города под контролем</h1><p>Интерактивная карта, гидравлическая модель, дефекты и прогноз надёжности в одном защищённом пространстве.</p></div>
+                <div class="login-features"><div class="login-feature"><strong>1 222</strong><span>сетевых объекта</span></div><div class="login-feature"><strong>Live</strong><span>цифровой двойник</span></div><div class="login-feature"><strong>24/7</strong><span>контроль аномалий</span></div></div>
+            </section>
+            <section class="login-form-side">
+                <div class="login-system-status"><i></i><span>Система готова к работе</span></div>
+                <div class="ktek-login-head"><h1 class="ktek-login-title" id="ktekLoginTitle">Добро пожаловать</h1><p class="ktek-login-sub">Войдите под учётной записью оператора, инженера или ремонтной бригады.</p></div>
+                <form id="ktekLoginForm">
+                    <div class="ktek-error-box" id="ktekLoginError" role="alert"></div>
+                    <div class="ktek-form-group"><label class="ktek-form-label" for="ktekLoginEmail">Рабочая почта</label><div class="login-input-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m4 6 8 6 8-6"/></svg><input id="ktekLoginEmail" type="email" class="ktek-input" placeholder="operator@ktek.kz" required autocomplete="email" autofocus /></div></div>
+                    <div class="ktek-form-group"><label class="ktek-form-label" for="ktekLoginPassword">Пароль доступа</label><div class="login-input-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="ktekLoginPassword" type="password" class="ktek-input" placeholder="Введите пароль" required autocomplete="current-password" /><button class="login-password-toggle" id="ktekPasswordToggle" type="button" aria-label="Показать пароль"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></div></div>
+                    <button type="submit" id="ktekLoginSubmitBtn" class="ktek-btn-primary"><span>Открыть главную карту</span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></button>
+                </form>
+                <div class="login-security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span>Защищённый доступ · Firebase Authentication</span></div>
+            </section>
         </div>
     </div>
 
@@ -3388,6 +3403,32 @@
         };
 
         // ── 1. AUTHENTICATION ──
+        function enterMainApplication() {
+            const overlay = document.getElementById("ktekLoginOverlay");
+            overlay?.classList.add("is-leaving");
+            document.body.classList.add("is-authenticated");
+            window.setTimeout(() => {
+                overlay?.classList.add("hidden");
+                overlay?.classList.remove("is-leaving");
+                map.invalidateSize({ animate: false });
+                window.dispatchEvent(new Event("resize"));
+            }, 420);
+        }
+
+        function returnToLogin() {
+            const overlay = document.getElementById("ktekLoginOverlay");
+            document.body.classList.remove("is-authenticated");
+            overlay?.classList.remove("hidden", "is-leaving");
+            window.setTimeout(() => document.getElementById("ktekLoginEmail")?.focus(), 120);
+        }
+
+        document.getElementById("ktekPasswordToggle").addEventListener("click", () => {
+            const input = document.getElementById("ktekLoginPassword");
+            input.type = input.type === "password" ? "text" : "password";
+            document.getElementById("ktekPasswordToggle").setAttribute("aria-label", input.type === "password" ? "Показать пароль" : "Скрыть пароль");
+            input.focus();
+        });
+
         onAuthStateChanged(fbAuth, async (user) => {
             const overlay = document.getElementById("ktekLoginOverlay");
             const badge = document.getElementById("ktekUserBadge");
@@ -3397,6 +3438,8 @@
             const btnPipe = document.getElementById("btnStartDrawPipe");
 
             if (user) {
+                // Do not block the authenticated operator on a slow profile query.
+                enterMainApplication();
                 let profile = { name: user.email.split('@')[0], role: "dispatcher", email: user.email };
                 try {
                     const snap = await get(ref(fbDb, "users"));
@@ -3414,7 +3457,6 @@
                 }
 
                 currentUserProfile = profile;
-                overlay.classList.add("hidden");
                 nameSpan.textContent = profile.name || user.email.split('@')[0];
 
                 if (profile.role === "admin") {
@@ -3439,7 +3481,7 @@
 
                 listenFirebaseRealtime();
             } else {
-                overlay.classList.remove("hidden");
+                returnToLogin();
                 currentUserProfile = null;
             }
         });
@@ -3453,7 +3495,7 @@
             const err = document.getElementById("ktekLoginError");
 
             btn.disabled = true;
-            btn.textContent = "Проверка...";
+            btn.innerHTML = '<span>Проверяем доступ…</span><span class="login-submit-spinner" aria-hidden="true"></span>';
             err.classList.remove("is-visible");
 
             try {
@@ -3464,13 +3506,15 @@
                     "auth/user-not-found": "Пользователь с таким email не найден.",
                     "auth/wrong-password": "Неверный пароль.",
                     "auth/invalid-credential": "Неверный логин или пароль.",
-                    "auth/invalid-email": "Некорректный формат email."
+                    "auth/invalid-email": "Некорректный формат email.",
+                    "auth/too-many-requests": "Слишком много попыток. Подождите немного и попробуйте снова.",
+                    "auth/network-request-failed": "Нет связи с сервером авторизации. Проверьте интернет."
                 };
                 err.textContent = msgs[error.code] || ("Ошибка авторизации: " + (error.message || error.code));
                 err.classList.add("is-visible");
             } finally {
                 btn.disabled = false;
-                btn.textContent = "Войти в систему";
+                btn.innerHTML = '<span>Открыть главную карту</span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>';
             }
         });
 
