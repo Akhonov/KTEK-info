@@ -7,6 +7,8 @@
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
     <style>
         * {
@@ -26,6 +28,41 @@
         #map {
             width: 100%;
             height: 100%;
+        }
+
+        /* Hide attribution */
+        .leaflet-control-attribution {
+            display: none !important;
+        }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            font-size: 18px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .theme-toggle i {
+            font-size: 18px;
         }
 
         /* Apple Light Map Controls */
@@ -51,38 +88,111 @@
             background: #f9f9f9 !important;
         }
 
-        /* Attribution */
-        .leaflet-control-attribution {
-            background: rgba(255, 255, 255, 0.8) !important;
-            border-radius: 8px !important;
-            font-size: 11px;
+        /* Dark theme */
+        body.dark-theme {
+            background: #1a1a1a;
+        }
+
+        body.dark-theme .theme-toggle {
+            background: rgba(40, 40, 40, 0.95);
+            color: #f0f0f0;
+        }
+
+        body.dark-theme .theme-toggle:hover {
+            background: rgba(50, 50, 50, 0.95);
+        }
+
+        body.dark-theme .leaflet-control-zoom a {
+            background: #2a2a2a !important;
+            color: #f0f0f0 !important;
+            border-bottom-color: #444 !important;
+        }
+
+        body.dark-theme .leaflet-control-zoom a:hover {
+            background: #333 !important;
         }
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="themeToggle">
+        <i class="fas fa-sun"></i>
+        <span>Светлая</span>
+    </button>
+    
     <div id="map"></div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
+        const themeToggle = document.getElementById('themeToggle');
+        let isDarkTheme = false;
+        let currentTileLayer = null;
+
+        function updateMapTheme() {
+            if (isDarkTheme) {
+                // Dark theme
+                document.body.classList.add('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Тёмная</span>';
+                
+                // Dark tile layer
+                if (currentTileLayer) {
+                    map.removeLayer(currentTileLayer);
+                }
+                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+                    subdomains: 'abcd',
+                    maxZoom: 20,
+                    minZoom: 1
+                }).addTo(map);
+                
+                // Apply dark overlay
+                const style = document.createElement('style');
+                style.id = 'darkOverlay';
+                style.innerHTML = `
+                    #map { filter: invert(0.93) hue-rotate(180deg); }
+                    #map img { filter: invert(1) hue-rotate(180deg); }
+                `;
+                if (!document.getElementById('darkOverlay')) {
+                    document.head.appendChild(style);
+                }
+            } else {
+                // Light theme
+                document.body.classList.remove('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Светлая</span>';
+                
+                // Light tile layer
+                if (currentTileLayer) {
+                    map.removeLayer(currentTileLayer);
+                }
+                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    subdomains: 'abcd',
+                    maxZoom: 20,
+                    minZoom: 1
+                }).addTo(map);
+                
+                // Remove dark overlay
+                const darkOverlay = document.getElementById('darkOverlay');
+                if (darkOverlay) darkOverlay.remove();
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            isDarkTheme = !isDarkTheme;
+            updateMapTheme();
+        });
+
         // Initialize map centered on Kostanay, Kazakhstan
         const map = L.map('map', {
             center: [53.2164, 63.6188],
             zoom: 13,
             zoomControl: true,
-            attributionControl: true
+            attributionControl: false
         });
 
-        // Apple Light Map Layer (CartoDB Voyager - Ultra-clean Light Style)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20,
-            minZoom: 1
-        }).addTo(map);
+        // Load initial theme
+        updateMapTheme();
 
-        console.log('✓ Map loaded successfully');
+        console.log('✓ Map with theme toggle loaded successfully');
     </script>
 </body>
 </html>
