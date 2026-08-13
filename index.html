@@ -147,6 +147,13 @@
     </button>
     
     <div id="map"></div>
+    
+    <!-- Debug log panel -->
+    <div id="debugPanel" style="position: fixed; bottom: 20px; left: 20px; z-index: 999; background: rgba(0,0,0,0.8); color: #0f0; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; max-width: 400px; max-height: 200px; overflow-y: auto; display: none;">
+        <div style="color: #0f0; margin-bottom: 8px; cursor: pointer; font-weight: bold;" onclick="document.getElementById('debugPanel').style.display='none'">✓ DEBUG LOG [click to hide]</div>
+        <div id="debugLog"></div>
+    </div>
+    <button style="position: fixed; bottom: 20px; left: 20px; z-index: 999; padding: 8px 12px; background: #0f0; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="document.getElementById('debugPanel').style.display='block'">DEBUG</button>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -156,6 +163,30 @@
         let isDarkTheme = false;
         let currentTileLayer = null;
         let markersLayer = null;
+        
+        // Debug logging to page
+        const debugLog = document.getElementById('debugLog');
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f00' : type === 'warn' ? '#ff0' : '#0f0';
+            const line = `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+            debugLog.innerHTML += line;
+            debugLog.parentElement.scrollTop = debugLog.parentElement.scrollHeight;
+            console.log(message);
+        }
+        
+        // Override console.log, warn, error
+        const originalLog = console.log;
+        console.log = function(...args) {
+            addLog(args.join(' '));
+            originalLog.apply(console, args);
+        };
+        console.error = function(...args) {
+            addLog('ERROR: ' + args.join(' '), 'error');
+        };
+        console.warn = function(...args) {
+            addLog('WARN: ' + args.join(' '), 'warn');
+        };
 
         function updateMapTheme() {
             if (isDarkTheme) {
