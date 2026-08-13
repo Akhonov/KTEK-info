@@ -2484,7 +2484,11 @@
     </aside>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="digital_twin.js?v=20260814-leak-propagation"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="hydraulic_model.js?v=20260814-math-model"></script>
+    <script src="operations_database.js?v=20260814-operations"></script>
+    <script src="operations_ui.js?v=20260814-operations"></script>
+    <script src="digital_twin.js?v=20260814-math-model"></script>
     <script>
         const map = L.map("map", {
             center: [53.2164, 63.6188],
@@ -2541,6 +2545,10 @@
         let twinSnapshot = null;
         let activeCardObjectId = null;
         let lastTwinImpactKey = "";
+        let operationsDatabase = null;
+        let hydraulicModel = null;
+        let operationsUI = null;
+        let currentMapData = null;
         try {
             sourcePositionOverrides = JSON.parse(localStorage.getItem(SOURCE_POSITIONS_KEY) || "{}") || {};
             deletedSourceIds = new Set(JSON.parse(localStorage.getItem(DELETED_SOURCES_KEY) || "[]") || []);
@@ -2716,16 +2724,19 @@
             const models = [
                 ...data.lines.map(object => ({
                     id: object.id, name: object.name, type: "Участок тепловой сети",
+                    assetType: "pipe", hydraulic: hydraulicModel?.get(object.id),
                     hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
                     downstreamObjects: object.downstreamObjects || []
                 })),
                 ...data.points.map(object => ({
                     id: object.id, name: object.name, type: "Объект тепловой сети",
+                    assetType: "chamber", hydraulic: hydraulicModel?.get(object.id),
                     hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
                     downstreamObjects: object.downstreamObjects || []
                 })),
                 ...(data.heatSources || []).filter(source => !deletedSourceIds.has(source.id)).map(object => ({
                     id: object.id, name: object.name, type: "Теплоисточник", hasActiveDefect: false,
+                    assetType: "source", hydraulic: hydraulicModel?.get(object.id),
                     downstreamObjects: object.downstreamObjects || []
                 }))
             ];
@@ -3340,6 +3351,7 @@
             if (hasSafeLink) sourceLink.href = object.link;
             renderDefects(object);
             renderObjectTelemetry(object.id);
+            operationsUI?.openObject(object);
 
             card.classList.add("is-open");
             card.setAttribute("aria-hidden", "false");
@@ -3651,16 +3663,39 @@
         setMapStyle(activeStyle);
         window.setInterval(updateLiveDefectTimers, 1000);
 
-        fetch("ktek_map_objects.json?v=20260814-leak-propagation", { cache: "no-store" })
-            .then(response => {
+        Promise.all([
+            fetch("ktek_map_objects.json?v=20260814-operations", { cache: "no-store" }).then(response => {
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return response.json();
-            })
-            .then(renderMap)
-            .catch(error => {
-                mapCounter.textContent = "Не удалось загрузить данные";
-                console.error("Ошибка загрузки карты:", error);
+            }),
+            (async () => {
+                operationsDatabase = new window.KtekOperationsDatabase("ktek_operations_database.json?v=20260814-operations");
+                return operationsDatabase.initialize();
+            })()
+        ]).then(([mapData, operationsData]) => {
+            currentMapData = mapData;
+            hydraulicModel = new window.HydraulicThermalModel(mapData, operationsData.assets);
+            renderMap(mapData);
+            operationsUI = new window.OperationsUI({
+                map,
+                mapData,
+                selectableObjects,
+                database: operationsDatabase,
+                hydraulic: hydraulicModel,
+                digitalTwin,
+                onRecalculated: () => {
+                    if (activeCardObjectId) renderObjectTelemetry(activeCardObjectId);
+                }
             });
+            digitalTwin?.setHydraulicResults(hydraulicModel.results);
+            if (activeCardObjectId) {
+                const target = selectableObjects.find(item => item.object.id === activeCardObjectId);
+                if (target) operationsUI.openObject(target.object);
+            }
+        }).catch(error => {
+            mapCounter.textContent = "Не удалось загрузить данные";
+            console.error("Ошибка загрузки карты и операционной БД:", error);
+        });
     </script>
 
     <!-- Firebase SDK (ESM) & KTEK Digital Twin Extension -->

@@ -34,14 +34,14 @@
 
         registerObject(object, triggerTick = true) {
             const seed = hash(object.id || object.name);
-            const source = object.type === "Теплоисточник";
+            const source = object.assetType === "source" || object.type === "Теплоисточник";
             this.models.set(object.id, {
                 ...object,
                 seed,
                 phase: (seed % 628) / 100,
-                baseSupply: source ? 86 + (seed % 70) / 10 : 66 + (seed % 150) / 10,
-                basePressure: source ? 8.1 + (seed % 15) / 10 : 5.1 + (seed % 22) / 10,
-                baseFlow: source ? 520 + seed % 1450 : 18 + seed % 380,
+                baseSupply: Number(object.hydraulic?.supplyTemperatureC ?? (source ? 86 + (seed % 70) / 10 : 66 + (seed % 150) / 10)),
+                basePressure: Number(object.hydraulic?.pressureBar ?? (source ? 8.1 + (seed % 15) / 10 : 5.1 + (seed % 22) / 10)),
+                baseFlow: Number(object.hydraulic?.flowM3h ?? (source ? 520 + seed % 1450 : 18 + seed % 380)),
                 history: [],
                 downstreamLevels: new Map(
                     (object.downstreamObjects || []).map(item => [item.id, Number(item.level || 0)])
@@ -165,7 +165,7 @@
                 pressureSum += telemetry.pressure;
                 totalFlow += telemetry.flow;
                 totalPower += telemetry.power;
-                if (model.type === "Теплоисточник") sourcePower += telemetry.power;
+                if (model.assetType === "source" || model.type === "Теплоисточник") sourcePower += telemetry.power;
                 if (status === "warning") warnings += 1;
                 if (status === "critical") critical += 1;
                 if (telemetry.leakAffected) affected += 1;
@@ -196,6 +196,18 @@
             if (!this.lastSnapshot) return;
             this.lastSnapshot.running = this.running;
             this.listeners.forEach(listener => listener(this.lastSnapshot));
+        }
+
+        setHydraulicResults(results) {
+            if (!results) return;
+            results.forEach((value, id) => {
+                const model = this.models.get(id);
+                if (!model) return;
+                model.baseSupply = Number(value.supplyTemperatureC);
+                model.basePressure = Number(value.pressureBar);
+                model.baseFlow = Number(value.flowM3h);
+            });
+            this.tick();
         }
 
         connectWebSocket(url) {
