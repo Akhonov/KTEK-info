@@ -85,58 +85,67 @@ window.KTEKApp = {
         Object.values(this.layers).forEach(layer => layer && layer.clearLayers());
 
         // 1. Render Pipelines (Dynamic Flow & Cut-off States)
+        // All 781 KML pipelines have exact waypoints — render them directly
         data.pipelines.forEach(pipe => {
-            const fromNode = data.sources.find(s => s.id === pipe.from) || data.chambers.find(c => c.id === pipe.from);
-            const toNode = data.chambers.find(c => c.id === pipe.to) || data.sources.find(s => s.id === pipe.to);
+            // Priority 1: use waypoints directly from KML data
+            let linePoints = pipe.waypoints && pipe.waypoints.length >= 2 ? pipe.waypoints : null;
 
-            if (fromNode && toNode) {
-                let color = pipe.isMagistral ? "#0284c7" : "#0284c7";
-                let dashArray = pipe.isMagistral ? null : "6, 6";
-                let className = "pipe-flow-active";
-
-                if (pipe.isCutOff) {
-                    color = "#64748b";
-                    dashArray = "8, 8";
-                    className = "pipe-cutoff";
-                } else if (pipe.status === "emergency") {
-                    color = "#ef4444";
-                    className = "";
-                } else if (pipe.status === "warning") {
-                    color = "#f59e0b";
+            // Priority 2: fall back to from/to node lookup for hand-coded pipes
+            if (!linePoints) {
+                const fromNode = data.sources.find(s => s.id === pipe.from)
+                    || data.chambers.find(c => c.id === pipe.from);
+                const toNode = data.chambers.find(c => c.id === pipe.to)
+                    || data.sources.find(s => s.id === pipe.to);
+                if (fromNode && toNode) {
+                    linePoints = [[fromNode.lat, fromNode.lng], [toNode.lat, toNode.lng]];
                 }
-
-                const linePoints = pipe.waypoints || [[fromNode.lat, fromNode.lng], [toNode.lat, toNode.lng]];
-                const line = L.polyline(linePoints, {
-                    color: color,
-                    weight: pipe.isMagistral ? 7 : 4,
-                    opacity: pipe.isCutOff ? 0.5 : 0.9,
-                    dashArray: dashArray,
-                    className: className
-                });
-
-                // Pipe Passport Click Event
-                line.on('click', () => {
-                    this.openPipePassportDrawer(pipe.id);
-                });
-
-                const risk = window.KTEKTopology.calculatePredictiveRiskScore(pipe);
-
-                line.bindPopup(`
-                    <div class="ktek-popup">
-                        <h4><i class="fa fa-pipeline"></i> ${pipe.name}</h4>
-                        <p><strong>Статус потока:</strong> ${pipe.isCutOff ? '<span class="status-tag danger">❌ НЕТ ПОТОКА (ПЕРЕКРЫТО)</span>' : '<span class="status-tag ok">🟢 ГОРЯЧИЙ ПОТОК</span>'}</p>
-                        <p><strong>Тип:</strong> ${pipe.isMagistral ? 'Тепловая Магистраль' : 'Внутриквартальная'}</p>
-                        <p><strong>Диаметр:</strong> ф${pipe.diameter} мм | <strong>Длина:</strong> ${pipe.lengthM} м</p>
-                        <p><strong>Год прокладки:</strong> ${pipe.year} (${2026 - pipe.year} лет)</p>
-                        <hr/>
-                        <button class="btn btn-primary btn-sm" onclick="window.KTEKApp.openPipePassportDrawer('${pipe.id}')">
-                            📜 Открыть Паспорт Трубы
-                        </button>
-                    </div>
-                `);
-
-                this.layers.pipelines.addLayer(line);
             }
+
+            if (!linePoints) return;
+
+            // Color logic
+            let color = pipe.isMagistral ? '#38bdf8' : '#0ea5e9';
+            let dashArray = null;
+            let className = 'pipe-flow-active';
+            let weight = pipe.isMagistral ? 5 : 2.5;
+
+            if (pipe.isCutOff) {
+                color = '#64748b';
+                dashArray = '8, 8';
+                className = 'pipe-cutoff';
+            } else if (pipe.status === 'emergency') {
+                color = '#ef4444';
+                className = 'pipe-emergency';
+                weight = pipe.isMagistral ? 6 : 3;
+            } else if (pipe.status === 'warning') {
+                color = '#f59e0b';
+                weight = pipe.isMagistral ? 5 : 3;
+            }
+
+            const line = L.polyline(linePoints, {
+                color,
+                weight,
+                opacity: pipe.isCutOff ? 0.45 : 0.88,
+                dashArray,
+                className
+            });
+
+            line.on('click', () => { this.openPipePassportDrawer(pipe.id); });
+
+            const risk = window.KTEKTopology.calculatePredictiveRiskScore(pipe);
+
+            line.bindPopup(`
+                <div class="ktek-popup">
+                    <h4>🔧 ${pipe.name}</h4>
+                    <p><strong>Поток:</strong> ${pipe.isCutOff ? '<span class="status-tag danger">❌ ПЕРЕКРЫТО</span>' : '<span class="status-tag ok">🟢 ГОРЯЧИЙ</span>'}</p>
+                    <p><strong>Тип:</strong> ${pipe.isMagistral ? 'Тепловая Магистраль' : 'Внутриквартальная сеть'}</p>
+                    <p><strong>Диаметр:</strong> ф${pipe.diameter} мм | <strong>Длина:</strong> ${pipe.lengthM} м</p>
+                    <p><strong>Год:</strong> ${pipe.year} (${2026 - pipe.year} лет) | <strong>Износ:</strong> ${pipe.wearPct || '?'}%</p>
+                    <button class="btn btn-primary btn-sm" onclick="window.KTEKApp.openPipePassportDrawer('${pipe.id}')">📜 Паспорт</button>
+                </div>
+            `);
+
+            this.layers.pipelines.addLayer(line);
         });
 
         // 2. Render Heat Sources (ТЭЦ / БМК)
@@ -628,6 +637,24 @@ window.KTEKApp = {
         if (closeDrawerBtn) {
             closeDrawerBtn.addEventListener('click', () => {
                 document.getElementById('anomalyDrawer')?.classList.remove('active');
+            });
+        }
+
+        // Toggle Table / Fullscreen Map Button
+        const toggleTableBtn = document.getElementById('btnToggleTableCollapse');
+        const tableWrap = document.getElementById('bottomAnomaliesTableWrap');
+        if (toggleTableBtn && tableWrap) {
+            toggleTableBtn.addEventListener('click', () => {
+                tableWrap.classList.toggle('collapsed');
+                const isCollapsed = tableWrap.classList.contains('collapsed');
+                const label = document.getElementById('tableToggleLabel');
+                if (label) {
+                    label.textContent = isCollapsed ? 'Показать таблицу' : 'Карта на весь экран';
+                }
+                toggleTableBtn.querySelector('i').className = isCollapsed ? 'fa fa-compress' : 'fa fa-expand';
+                setTimeout(() => {
+                    if (this.map) this.map.invalidateSize();
+                }, 280);
             });
         }
 

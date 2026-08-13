@@ -1,396 +1,537 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart City Map - Kostanay</title>
-    
-    <!-- Leaflet CSS -->
+    <title>ThermoTrace | КТЭК-СКАДА ЦИФРОВОЙ ДВОЙНИК 2.0</title>
+
+    <!-- Leaflet GIS CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- FontAwesome for icons -->
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            height: 100vh;
-            width: 100%;
-            overflow: hidden;
-            background: #f5f5f5;
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Hide attribution */
-        .leaflet-control-attribution {
-            display: none !important;
-        }
-
-        /* Theme toggle button */
-        .theme-toggle {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 8px;
-            padding: 10px 14px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-            font-size: 18px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .theme-toggle i {
-            font-size: 18px;
-        }
-
-        /* Marker styling */
-        .thermal-marker {
-            background: transparent !important;
-            border: none !important;
-        }
-
-        .marker-badge {
-            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4)) !important;
-            cursor: pointer;
-            border: 2px solid #fff;
-            transition: transform 0.2s ease, filter 0.2s ease;
-        }
-
-        .marker-badge:hover {
-            transform: scale(1.15);
-            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6)) !important;
-        }
-
-        /* Apple Light Map Controls */
-        .leaflet-control-zoom {
-            border-radius: 12px !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-            border: none !important;
-        }
-
-        .leaflet-control-zoom a {
-            background: #fff !important;
-            color: #333 !important;
-            border-bottom: 1px solid #e5e5e5 !important;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .leaflet-control-zoom a:last-child {
-            border-bottom: none !important;
-        }
-
-        .leaflet-control-zoom a:hover {
-            background: #f9f9f9 !important;
-        }
-
-        /* Dark theme */
-        body.dark-theme {
-            background: #1a1a1a;
-        }
-
-        body.dark-theme .theme-toggle {
-            background: rgba(40, 40, 40, 0.95);
-            color: #f0f0f0;
-        }
-
-        body.dark-theme .theme-toggle:hover {
-            background: rgba(50, 50, 50, 0.95);
-        }
-
-        body.dark-theme .leaflet-control-zoom a {
-            background: #2a2a2a !important;
-            color: #f0f0f0 !important;
-            border-bottom-color: #444 !important;
-        }
-
-        body.dark-theme .leaflet-control-zoom a:hover {
-            background: #333 !important;
-        }
-
-        /* Leaflet polylines - ensure visibility */
-        .leaflet-pane-overlayPane {
-            z-index: 400;
-        }
-
-        .leaflet-pane-markerPane {
-            z-index: 600;
-        }
-    </style>
+    <!-- Custom SCADA Design System -->
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <button class="theme-toggle" id="themeToggle">
-        <i class="fas fa-sun"></i>
-        <span>Светлая</span>
-    </button>
-    
-    <div id="map"></div>
-    
-    <!-- Debug log panel -->
-    <div id="debugPanel" style="position: fixed; bottom: 20px; left: 20px; z-index: 999; background: rgba(0,0,0,0.8); color: #0f0; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; max-width: 400px; max-height: 200px; overflow-y: auto; display: none;">
-        <div style="color: #0f0; margin-bottom: 8px; cursor: pointer; font-weight: bold;" onclick="document.getElementById('debugPanel').style.display='none'">✓ DEBUG LOG [click to hide]</div>
-        <div id="debugLog"></div>
-    </div>
-    <button style="position: fixed; bottom: 20px; left: 20px; z-index: 999; padding: 8px 12px; background: #0f0; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="document.getElementById('debugPanel').style.display='block'">DEBUG</button>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<body class="thermotrace-dark">
 
-    <script>
-        const themeToggle = document.getElementById('themeToggle');
-        let isDarkTheme = false;
-        let currentTileLayer = null;
-        let markersLayer = null;
-        
-        // Debug logging to page
-        const debugLog = document.getElementById('debugLog');
-        function addLog(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const color = type === 'error' ? '#f00' : type === 'warn' ? '#ff0' : '#0f0';
-            const line = `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
-            debugLog.innerHTML += line;
-            debugLog.parentElement.scrollTop = debugLog.parentElement.scrollHeight;
-        }
-        
-        // Save original console methods
-        const originalLog = console.log;
-        const originalError = console.error;
-        const originalWarn = console.warn;
-        
-        // Override console methods
-        console.log = function(...args) {
-            addLog(args.join(' '));
-            originalLog.apply(console, args);
-        };
-        console.error = function(...args) {
-            addLog('ERROR: ' + args.join(' '), 'error');
-            originalError.apply(console, args);
-        };
-        console.warn = function(...args) {
-            addLog('WARN: ' + args.join(' '), 'warn');
-            originalWarn.apply(console, args);
-        };
+    <!-- THERMOTRACE TOP HEADER BAR (Matching Image 2) -->
+    <header class="tt-header">
+        <div class="tt-header-left">
+            <div class="tt-logo">
+                <div class="tt-logo-icon">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                </div>
+                <span class="tt-logo-text">ThermoTrace</span>
+            </div>
 
-        function updateMapTheme() {
-            if (isDarkTheme) {
-                // Dark theme
-                document.body.classList.add('dark-theme');
-                themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Тёмная</span>';
-                
-                // Dark tile layer
-                if (currentTileLayer) {
-                    map.removeLayer(currentTileLayer);
-                }
-                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
-                    subdomains: 'abcd',
-                    maxZoom: 20,
-                    minZoom: 1
-                }).addTo(map);
-            } else {
-                // Light theme
-                document.body.classList.remove('dark-theme');
-                themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Светлая</span>';
-                
-                // Light tile layer
-                if (currentTileLayer) {
-                    map.removeLayer(currentTileLayer);
-                }
-                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    subdomains: 'abcd',
-                    maxZoom: 20,
-                    minZoom: 1
-                }).addTo(map);
-            }
-        }
+            <div class="tt-search-container">
+                <i class="fa-solid fa-magnifying-glass tt-search-icon"></i>
+                <input type="text" id="ttGlobalSearch" placeholder="Поиск по объектам, адресам, ID..." class="tt-search-input">
+                <span class="tt-search-kbd">⌘K</span>
+            </div>
+        </div>
 
-        themeToggle.addEventListener('click', () => {
-            isDarkTheme = !isDarkTheme;
-            updateMapTheme();
-        });
+        <div class="tt-header-center">
+            <div class="tt-time-widget">
+                <i class="fa-regular fa-clock"></i>
+                <span id="ttCurrentDateTime">21 мая 2025, ср | 09:42:18</span>
+            </div>
+            <div class="tt-weather-widget">
+                <i class="fa-solid fa-cloud-sun"></i>
+                <span>12°C Облачно</span>
+            </div>
 
-        // Initialize map centered on Kostanay, Kazakhstan
-        const map = L.map('map', {
-            center: [53.2164, 63.6188],
-            zoom: 13,
-            zoomControl: true,
-            attributionControl: false
-        });
+            <div class="tt-filter-selects">
+                <select id="districtFilterSelect" class="tt-select">
+                    <option value="all">Все районы</option>
+                    <option value="ТЭЦ-1 Центр">ТЭЦ-1 Центр</option>
+                    <option value="ТЭЦ-2 КСК">ТЭЦ-2 КСК</option>
+                    <option value="РК-3 КЖБИ">РК-3 КЖБИ</option>
+                </select>
+                <select id="magistralFilterSelect" class="tt-select">
+                    <option value="all">Все тепломагистрали</option>
+                    <option value="TM1">ТМ-1 (ул. Ленина)</option>
+                    <option value="TM2">ТМ-2 (ул. Мира)</option>
+                    <option value="TM3">ТМ-3 (ул. Гагарина)</option>
+                    <option value="TM19">ТМ-19 (КЖБИ)</option>
+                </select>
+                <button class="tt-icon-btn" title="Фильтры"><i class="fa-solid fa-sliders"></i></button>
+            </div>
+        </div>
 
-        // Load initial theme
-        updateMapTheme();
+        <div class="tt-header-right">
+            <button class="tt-icon-btn tt-bell" title="Уведомления">
+                <i class="fa-regular fa-bell"></i>
+                <span class="tt-badge-counter">6</span>
+            </button>
+            <div class="tt-user-profile">
+                <div class="tt-avatar">
+                    <i class="fa-solid fa-user-gear"></i>
+                </div>
+                <div class="tt-user-info">
+                    <span class="tt-user-name">Иван Петров</span>
+                    <span class="tt-user-role">Диспетчер</span>
+                </div>
+            </div>
+        </div>
+    </header>
 
-        // Load thermal network markers
-        markersLayer = L.layerGroup().addTo(map);
+    <!-- THERMOTRACE MAIN CONTAINER (Sidebar + Workspace) -->
+    <div class="tt-app-layout">
 
-        fetch('ktek_built_dataset.json')
-            .then(response => response.json())
-            .then(data => {
-                addLog('✓ Data loaded: ' + data.chambers.length + ' chambers, ' + data.pipelines.length + ' pipes');
-                
-                // Helper function to get color based on status
-                const getStatusColor = (status) => {
-                    switch(status) {
-                        case 'emergency': return '#ef4444'; // Brighter red
-                        case 'warning': return '#f97316';   // Brighter orange
-                        case 'repair': return '#a78bfa';    // Lighter purple
-                        default: return '#4ade80';           // Brighter green
-                    }
-                };
+        <!-- LEFT SIDEBAR NAVIGATION (Matching Image 2) -->
+        <aside class="tt-sidebar">
+            <nav class="tt-nav-list">
+                <button class="tt-nav-item" data-tab="overview">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Обзор</span>
+                </button>
+                <button class="tt-nav-item active" data-tab="map">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>Живая карта</span>
+                </button>
+                <button class="tt-nav-item" data-tab="anomalies">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Аномалии</span>
+                    <span class="tt-nav-badge danger">12</span>
+                </button>
+                <button class="tt-nav-item" data-tab="outages">
+                    <i class="fa-solid fa-power-off"></i>
+                    <span>Отключения</span>
+                    <span class="tt-nav-badge warn">3</span>
+                </button>
+                <button class="tt-nav-item" data-tab="passports">
+                    <i class="fa-solid fa-building-user"></i>
+                    <span>Объекты</span>
+                </button>
+                <button class="tt-nav-item" data-tab="equipment">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Бригады</span>
+                </button>
+                <button class="tt-nav-item" data-tab="mnemo">
+                    <i class="fa-solid fa-diagram-project"></i>
+                    <span>FUXA Скада</span>
+                </button>
+                <button class="tt-nav-item" data-tab="lablink">
+                    <i class="fa-solid fa-network-wired"></i>
+                    <span>Lablink Модель</span>
+                </button>
+                <button class="tt-nav-item" data-tab="tablet">
+                    <i class="fa-solid fa-tablet-screen-button"></i>
+                    <span>АРМ Планшет</span>
+                </button>
+            </nav>
 
-                // Draw pipelines first (so they appear under markers)
-                if (data.pipelines && data.pipelines.length > 0) {
-                    addLog(`Drawing ${data.pipelines.length} pipelines...`);
-                    
-                    let pipelineCount = 0;
-                    let skipped = 0;
-                    
-                    data.pipelines.forEach((pipe, idx) => {
-                        try {
-                            let latlngs = [];
+            <div class="tt-sidebar-footer">
+                <button class="tt-nav-item" id="btnToggleSidebar">
+                    <i class="fa-solid fa-angles-left"></i>
+                    <span>Свернуть</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN WORKSPACE -->
+        <main class="tt-workspace">
+
+            <!-- TOP 5 KPI METRICS CARDS ROW (Matching Image 2) -->
+            <section class="tt-kpi-row">
+                <div class="tt-kpi-card alert">
+                    <div class="tt-kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="tt-kpi-content">
+                        <span class="tt-kpi-label">АКТИВНЫЕ АНОМАЛИИ</span>
+                        <div class="tt-kpi-val-group">
+                            <span class="tt-kpi-val" id="kpiActiveAnomalies">12</span>
+                            <span class="tt-kpi-sub danger">+2 за час</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tt-kpi-card danger">
+                    <div class="tt-kpi-icon"><i class="fa-solid fa-code-branch"></i></div>
+                    <div class="tt-kpi-content">
+                        <span class="tt-kpi-label">КРИТИЧЕСКИЕ ВЕТКИ</span>
+                        <div class="tt-kpi-val-group">
+                            <span class="tt-kpi-val" id="kpiCriticalBranches">3</span>
+                            <span class="tt-kpi-sub danger">+1 за час</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tt-kpi-card warning">
+                    <div class="tt-kpi-icon"><i class="fa-solid fa-scale-unbalanced-flip"></i></div>
+                    <div class="tt-kpi-content">
+                        <span class="tt-kpi-label">СУММАРНЫЙ ДИСБАЛАНС</span>
+                        <div class="tt-kpi-val-group">
+                            <span class="tt-kpi-val" id="kpiTotalImbalance">78.6 <small>Гкал/ч</small></span>
+                            <span class="tt-kpi-sub warn">+12.4 Гкал/ч (18%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tt-kpi-card info">
+                    <div class="tt-kpi-icon"><i class="fa-solid fa-user-group"></i></div>
+                    <div class="tt-kpi-content">
+                        <span class="tt-kpi-label">БРИГАД В РАБОТЕ</span>
+                        <div class="tt-kpi-val-group">
+                            <span class="tt-kpi-val" id="kpiCrewsWorking">8</span>
+                            <span class="tt-kpi-sub">на объектах</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tt-kpi-card normal">
+                    <div class="tt-kpi-icon"><i class="fa-regular fa-eye"></i></div>
+                    <div class="tt-kpi-content">
+                        <span class="tt-kpi-label">ПОД НАБЛЮДЕНИЕМ</span>
+                        <div class="tt-kpi-val-group">
+                            <span class="tt-kpi-val" id="kpiMonitoredObjects">264</span>
+                            <span class="tt-kpi-sub">объекта</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB PANELS WORKSPACE CONTAINER -->
+            <div class="tt-content-body">
+
+                <!-- TAB 1: LIVE GIS MAP & ANOMALY TABLE VIEW (Matching Image 2 Layout) -->
+                <div id="tab-map" class="tt-tab-panel active">
+                    <div class="tt-map-split-view">
+
+                        <!-- TOP GIS MAP SECTION -->
+                        <div class="tt-map-container-wrap">
                             
-                            // Try to parse coordinates - support multiple formats
-                            if (pipe.coordinates && Array.isArray(pipe.coordinates) && pipe.coordinates.length > 1) {
-                                // Format: [[lat, lng], [lat, lng], ...]
-                                if (Array.isArray(pipe.coordinates[0])) {
-                                    latlngs = pipe.coordinates;
-                                }
-                            } else if (pipe.waypoints && pipe.waypoints.length > 1) {
-                                // Format: ["lat lng", "lat lng", ...]
-                                latlngs = pipe.waypoints.map(wp => {
-                                    if (typeof wp === 'string') {
-                                        const [lat, lng] = wp.split(' ').map(Number);
-                                        return [lat, lng];
-                                    }
-                                    return wp;
-                                });
-                            }
-                            
-                            // Only draw if we have valid coordinates
-                            if (latlngs.length > 1) {
-                                pipelineCount++;
+                            <!-- MAP LAYER CONTROLS OVERLAY TOP-LEFT -->
+                            <div class="tt-map-layers-overlay">
+                                <label class="tt-layer-toggle">
+                                    <input type="checkbox" id="layerTeplosetToggle" checked>
+                                    <span><i class="fa-solid fa-timeline"></i> Теплосеть</span>
+                                    <i class="fa-regular fa-eye"></i>
+                                </label>
+                                <label class="tt-layer-toggle">
+                                    <input type="checkbox" id="layerAnomaliesToggle" checked>
+                                    <span><i class="fa-solid fa-circle-exclamation text-danger"></i> Аномалии</span>
+                                    <i class="fa-regular fa-eye"></i>
+                                </label>
+                                <label class="tt-layer-toggle">
+                                    <input type="checkbox" id="layerConsumersToggle" checked>
+                                    <span><i class="fa-solid fa-house-chimney"></i> Потребители</span>
+                                    <i class="fa-regular fa-eye"></i>
+                                </label>
+                                <label class="tt-layer-toggle">
+                                    <input type="checkbox" id="layerSocialToggle" checked>
+                                    <span><i class="fa-solid fa-hospital"></i> Соцобъекты</span>
+                                    <i class="fa-regular fa-eye"></i>
+                                </label>
+                            </div>
 
-                                // Determine color and style
-                                const color = getStatusColor(pipe.status);
-                                const weight = pipe.isMagistral ? 4 : 2;
-                                const opacity = 0.8;
-                                const dashArray = pipe.status === 'emergency' ? '8, 4' : null;
+                            <!-- LEAFLET MAP ELEMENT -->
+                            <div id="map"></div>
 
-                                // Draw pipeline
-                                const polyline = L.polyline(latlngs, {
-                                    color: color,
-                                    weight: weight,
-                                    opacity: opacity,
-                                    dashArray: dashArray,
-                                    lineCap: 'round',
-                                    lineJoin: 'round'
-                                }).addTo(markersLayer);
+                            <!-- MAP LEGEND OVERLAY BOTTOM -->
+                            <div class="tt-map-legend">
+                                <span class="legend-item"><i class="legend-line norm"></i> Норма</span>
+                                <span class="legend-item"><i class="legend-line warn"></i> Предупреждение</span>
+                                <span class="legend-item"><i class="legend-line anom"></i> Аномалия</span>
+                                <span class="legend-item"><i class="legend-line crit"></i> Критическая аномалия</span>
+                                <span class="legend-item"><i class="legend-icon chamber"></i> ТК/Камера</span>
+                                <span class="legend-item"><i class="legend-icon house"></i> Потребитель</span>
+                            </div>
 
-                                // Add popup
-                                polyline.bindPopup(`
-                                    <div style="font-size: 11px; min-width: 180px;">
-                                        <strong>${pipe.name}</strong><br/>
-                                        Диаметр: ф${pipe.diameter || '—'} мм<br/>
-                                        Длина: ${pipe.lengthM || '—'} м<br/>
-                                        Год: ${pipe.year || '—'}<br/>
-                                        Тип: ${pipe.isMagistral ? 'Магистраль' : 'Внутрикв.'}<br/>
-                                        Статус: <span style="color: ${color}; font-weight: 600;">${pipe.status}</span>
+                            <!-- RIGHT SIDE DRAWER: ANOMALY DETAIL PANEL (Matching Image 2) -->
+                            <aside id="anomalyDrawer" class="tt-side-drawer active">
+                                <div class="tt-drawer-header">
+                                    <div class="tt-drawer-title-group">
+                                        <h3 id="drawerAnomalyTitle">Аномалия А-1038</h3>
+                                        <span class="tt-tag danger" id="drawerAnomalyRiskTag">Высокий риск</span>
                                     </div>
-                                `);
-                            } else {
-                                skipped++;
-                                // No valid coordinates for this pipe
-                                if (idx < 5) {
-                                    addLog(`Pipe ${idx} (${pipe.name}): no valid coords`, 'warn');
-                                }
-                            }
-                        } catch(e) {
-                            // Skip malformed pipes
-                            if (idx < 5) {
-                                addLog(`Error on pipe ${idx}: ${e.message}`, 'error');
-                            }
-                        }
-                    });
-                    
-                    addLog(`✓ Pipelines drawn: ${pipelineCount} of ${data.pipelines.length} (skipped: ${skipped})`);
-                }
-                
-                // Draw chamber markers
-                if (data.chambers && data.chambers.length > 0) {
-                    addLog(`Drawing ${data.chambers.length} chambers...`);
-                    
-                    let markerCount = 0;
-                    data.chambers.forEach((chamber, idx) => {
-                        try {
-                            const statusColor = getStatusColor(chamber.status);
-                            const labelSize = Math.max(70, chamber.id.length * 8);
-                            
-                            const icon = L.divIcon({
-                                className: 'thermal-marker',
-                                html: `<div class="marker-badge" style="background: ${statusColor}; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; white-space: nowrap; box-shadow: 0 3px 8px rgba(0,0,0,0.4); border: 2px solid #fff;">${chamber.id}</div>`,
-                                iconSize: [labelSize, 32],
-                                iconAnchor: [labelSize/2, 16],
-                                popupAnchor: [0, -16]
-                            });
+                                    <button class="tt-btn-close" id="btnCloseAnomalyDrawer">&times;</button>
+                                </div>
 
-                            const marker = L.marker([chamber.lat, chamber.lng], { icon: icon })
-                                .bindPopup(`
-                                    <div style="font-size: 12px; min-width: 240px; padding: 8px;">
-                                        <strong style="font-size: 14px; color: ${statusColor}; display: block; margin-bottom: 6px;">${chamber.name}</strong>
-                                        <div style="background: #f0f0f0; padding: 6px; border-radius: 4px; margin-bottom: 6px; font-size: 11px;">
-                                            📍 Координаты: ${chamber.lat.toFixed(5)}, ${chamber.lng.toFixed(5)}<br/>
-                                            🔗 Источник: ${chamber.source || '—'}<br/>
-                                            🚦 Статус: <span style="color: ${statusColor}; font-weight: 600;">${chamber.status || 'нормально'}</span>
+                                <div class="tt-drawer-location">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    <span id="drawerAnomalyLocation">ул. Ленина, 45 – ул. Ленина, 67 | Магистраль 2-3, ветка 2-3-7</span>
+                                </div>
+
+                                <!-- DRAWER TABS -->
+                                <div class="tt-drawer-tabs">
+                                    <button class="tt-dtab active" data-dtab="main">Основное</button>
+                                    <button class="tt-dtab" data-dtab="balance">Баланс</button>
+                                    <button class="tt-dtab" data-dtab="hypo">Гипотезы</button>
+                                    <button class="tt-dtab" data-dtab="objects">Затронутые объекты</button>
+                                </div>
+
+                                <div class="tt-drawer-body">
+                                    <div class="tt-section-box">
+                                        <label class="tt-box-label">ОПИСАНИЕ</label>
+                                        <p class="tt-desc-text" id="drawerAnomalyDesc">
+                                            Повышенный тепловой отбор на участке. Возможен неучтённый отбор (нелегальная врезка) или скрытый свищ в тепловой камере.
+                                        </p>
+                                    </div>
+
+                                    <!-- HEAT BALANCE CARDS -->
+                                    <div class="tt-section-box">
+                                        <label class="tt-box-label">БАЛАНС ТЕПЛА</label>
+                                        <div class="tt-balance-grid">
+                                            <div class="tt-bal-card">
+                                                <span class="bal-title">Ожидаемый расход</span>
+                                                <span class="bal-val" id="balExpected">23.4 <small>Гкал/ч</small></span>
+                                            </div>
+                                            <div class="tt-bal-card">
+                                                <span class="bal-title">Фактический расход</span>
+                                                <span class="bal-val danger" id="balActual">41.9 <small>Гкал/ч</small></span>
+                                            </div>
+                                            <div class="tt-bal-card full">
+                                                <span class="bal-title">Дисбаланс</span>
+                                                <span class="bal-val danger" id="balDiff">18.5 <small>Гкал/ч</small> (+78.9%)</span>
+                                            </div>
                                         </div>
-                                        <strong>Температуры:</strong><br/>
-                                        🔴 Подача: <strong>${chamber.t1 || '—'}°C</strong><br/>
-                                        🔵 Обратка: <strong>${chamber.t2 || '—'}°C</strong><br/>
-                                        <strong>Давления:</strong><br/>
-                                        🔴 Подача: <strong>${chamber.p1 || '—'} бар</strong><br/>
-                                        🔵 Обратка: <strong>${chamber.p2 || '—'} бар</strong>
                                     </div>
-                                `)
-                                .addTo(markersLayer);
-                            
-                            markerCount++;
-                        } catch(e) {
-                            if (idx < 5) {
-                                addLog(`Error adding chamber ${idx} (${chamber.id}): ${e.message}`, 'error');
-                            }
-                        }
-                    });
-                    
-                    addLog(`✓ Markers drawn: ${markerCount} of ${data.chambers.length}`);
-                }
 
-                addLog(`✅ Map loaded with all data!`);
-            })
-            .catch(err => {
-                addLog(`Error loading data: ${err.message}`, 'error');
-            });
+                                    <!-- DYNAMICS LINE CHART -->
+                                    <div class="tt-section-box">
+                                        <div class="tt-chart-header">
+                                            <label class="tt-box-label">ДИНАМИКА АНОМАЛИИ</label>
+                                            <span class="tt-chart-unit">Гкал/ч</span>
+                                        </div>
+                                        <div class="tt-canvas-wrap">
+                                            <canvas id="anomalyTrendCanvas" height="110"></canvas>
+                                        </div>
+                                        <span class="tt-chart-note">Данные за последние 24 часа</span>
+                                    </div>
+                                </div>
 
-        console.log('✓ Map with thermal network markers loaded');
-    </script>
+                                <div class="tt-drawer-footer">
+                                    <button class="tt-btn tt-btn-outline" id="btnShowBranch"><i class="fa-solid fa-code-branch"></i> Показать ветку</button>
+                                    <button class="tt-btn tt-btn-outline" id="btnSimulateOutage"><i class="fa-solid fa-wrench"></i> Смоделировать отключение</button>
+                                    <button class="tt-btn tt-btn-primary" id="btnCreateTask"><i class="fa-solid fa-clipboard-list"></i> Создать задание</button>
+                                </div>
+                            </aside>
+
+                        </div>
+
+                        <!-- BOTTOM ANOMALIES TABLE SECTION (Matching Image 2) -->
+                        <div class="tt-table-container-wrap" id="bottomAnomaliesTableWrap">
+                            <div class="tt-table-header">
+                                <div class="tt-table-title-group">
+                                    <h3>СПИСОК АНОМАЛИЙ</h3>
+                                    <span class="tt-count-badge" id="anomalyListCount">12</span>
+                                </div>
+                                <div class="tt-table-actions">
+                                    <span class="tt-sort-label">Сортировка:</span>
+                                    <select id="anomalySortSelect" class="tt-select sm">
+                                        <option value="risk">По риску</option>
+                                        <option value="imbalance">По дисбалансу</option>
+                                        <option value="time">По времени</option>
+                                    </select>
+                                    <button class="tt-select sm" id="btnToggleTableCollapse" style="cursor:pointer; background:#3b82f6; color:#fff; border-color:#3b82f6;"><i class="fa fa-expand"></i> <span id="tableToggleLabel">Карта на весь экран</span></button>
+                                </div>
+                            </div>
+
+                            <div class="tt-table-scroll">
+                                <table class="tt-table" id="anomaliesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Участок</th>
+                                            <th>Дисбаланс, Гкал/ч</th>
+                                            <th>Дисбаланс, %</th>
+                                            <th>Риск</th>
+                                            <th>Статус</th>
+                                            <th>Обнаружено</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="anomaliesTableBody">
+                                        <!-- Dynamically generated rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- TAB 2: OVERVIEW TAB -->
+                <div id="tab-overview" class="tt-tab-panel">
+                    <div class="content-wrapper" id="overviewTabContent"></div>
+                </div>
+
+                <!-- TAB 3: ANOMALIES & ANALYTICS TAB -->
+                <div id="tab-anomalies" class="tt-tab-panel">
+                    <div class="content-wrapper" id="anomaliesTabContent"></div>
+                </div>
+
+                <!-- TAB 4: OUTAGES TAB -->
+                <div id="tab-outages" class="tt-tab-panel">
+                    <div class="content-wrapper" id="outagesTabContent"></div>
+                </div>
+
+                <!-- TAB 5: OBJECTS & PASSPORTS TAB -->
+                <div id="tab-passports" class="tt-tab-panel">
+                    <div class="content-wrapper" id="passportsTabContent"></div>
+                </div>
+
+                <!-- TAB 6: CREWS & EQUIPMENT TAB -->
+                <div id="tab-equipment" class="tt-tab-panel">
+                    <div class="content-wrapper" id="equipmentTabContent"></div>
+                </div>
+
+                <!-- TAB 7: FUXA SCADA MNEMOSCHEMA TAB -->
+                <div id="tab-mnemo" class="tt-tab-panel">
+                    <div id="mnemoschemaContent" class="fuxa-mnemo-container"></div>
+                </div>
+
+                <!-- TAB 8: LABLINK CO-SIMULATION TAB -->
+                <div id="tab-lablink" class="tt-tab-panel">
+                    <div id="lablinkContent" class="lablink-model-container"></div>
+                </div>
+
+                <!-- TAB 9: MOBILE FIELD TABLET ARM TAB -->
+                <div id="tab-tablet" class="tt-tab-panel">
+                    <div class="content-wrapper">
+                        <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <h2>📱 АРМ Полевого Инженера (Планшетный интерфейс)</h2>
+                                <p>Внесение дефектов на местности, корректировка топологии GPS, работа в офлайне</p>
+                            </div>
+                            <div>
+                                <span id="tabletNetStatus" class="net-badge online">🟢 ОНЛАЙН (Синхронизировано)</span>
+                            </div>
+                        </div>
+
+                        <div class="admin-grid">
+                            <div class="admin-card">
+                                <h3><i class="fa fa-clipboard-check"></i> Зафиксировать Дефект / Порыв</h3>
+                                <form onsubmit="event.preventDefault(); window.KTEKFieldTablet.addDefectFromTablet({
+                                    source: this.source.value,
+                                    tk: this.tk.value,
+                                    address: this.address.value,
+                                    defectType: this.defectType.value,
+                                    priority: this.priority.value,
+                                    note: this.note.value
+                                }); this.reset();">
+                                    <div class="form-group">
+                                        <label>Источник / Район:</label>
+                                        <select name="source">
+                                            <option value="ТЭЦ-1">ТЭЦ-1 (Центр)</option>
+                                            <option value="ТЭЦ-2">ТЭЦ-2 (КСК)</option>
+                                            <option value="РК-3">РК-3 (КЖБИ)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Идентификатор ТК / ВУ:</label>
+                                        <input type="text" name="tk" placeholder="ТК7.01" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Адрес объекта:</label>
+                                        <input type="text" name="address" placeholder="Ул. Ленина 45" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Характер дефекта:</label>
+                                        <input type="text" name="defectType" placeholder="Порыв тр ф530, свищ в камере" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Критичность (1-5):</label>
+                                        <select name="priority">
+                                            <option value="5">5 - Критический Аварийный Порыв 🚨</option>
+                                            <option value="4">4 - Высокая приоритетность</option>
+                                            <option value="3" selected>3 - Средняя приоритетность</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="margin-top:10px;">
+                                        📲 Сохранить дефект в АРМ
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="admin-card">
+                                <h3><i class="fa fa-location-dot"></i> Корректировка Топологии Сети на Местности</h3>
+                                <form onsubmit="event.preventDefault(); window.KTEKFieldTablet.addChamberFromTablet({
+                                    id: this.id.value,
+                                    name: this.name.value,
+                                    lat: this.lat.value,
+                                    lng: this.lng.value,
+                                    source: this.source.value
+                                }); this.reset();">
+                                    <div class="form-group">
+                                        <label>Идентификатор нового узла:</label>
+                                        <input type="text" name="id" placeholder="ТК24.01" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Наименование / Описание:</label>
+                                        <input type="text" name="name" placeholder="Новая камерная арматура" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Широта (GPS Lat):</label>
+                                        <input type="text" name="lat" value="53.210" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Долгота (GPS Lng):</label>
+                                        <input type="text" name="lng" value="63.620" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-secondary" style="margin-top:10px;">
+                                        📍 Нанести узел на карту КТЭК
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- THERMOTRACE FOOTER BAR (Matching Image 2) -->
+            <footer class="tt-footer">
+                <span>© 2025 ThermoTrace. Все права защищены. | ГКП «КТЭК» SCADA Digital Twin 2.0</span>
+                <div class="tt-footer-right">
+                    <span>Версия 2.3.1</span>
+                    <span class="tt-status-online">● Онлайн</span>
+                </div>
+            </footer>
+
+        </main>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Pipe Passport Drawer -->
+    <aside id="pipePassportDrawer" class="passport-drawer">
+        <div class="drawer-header">
+            <h3><i class="fa fa-pipeline"></i> Паспорт участка теплотрассы</h3>
+            <button class="btn-close-drawer" onclick="document.getElementById('pipePassportDrawer').classList.remove('active')">&times;</button>
+        </div>
+        <div class="drawer-body" id="pipePassportContent"></div>
+    </aside>
+
+    <!-- House Digital Passport Drawer -->
+    <aside id="housePassportDrawer" class="passport-drawer">
+        <div class="drawer-header">
+            <h3><i class="fa fa-building"></i> Цифровой паспорт дома</h3>
+            <button class="btn-close-drawer" onclick="document.getElementById('housePassportDrawer').classList.remove('active')">&times;</button>
+        </div>
+        <div class="drawer-body" id="housePassportContent"></div>
+    </aside>
+
+    <!-- Chamber Card Drawer -->
+    <aside id="chamberCardDrawer" class="passport-drawer">
+        <div class="drawer-header">
+            <h3><i class="fa fa-cubes"></i> Карточка Тепловой Камеры</h3>
+            <button class="btn-close-drawer" onclick="document.getElementById('chamberCardDrawer').classList.remove('active')">&times;</button>
+        </div>
+        <div class="drawer-body" id="chamberCardContent"></div>
+    </aside>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="data_loader.js"></script>
+    <script src="topology.js"></script>
+    <script src="scada.js"></script>
+    <script src="field_tablet.js"></script>
+    <script src="admin_nocode.js"></script>
+    <script src="app.js"></script>
 </body>
+
 </html>
