@@ -3,394 +3,1112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart City Map - Kostanay</title>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- FontAwesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Тепловые сети Костаная</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
-        * {
+        :root {
+            color-scheme: light;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body, #map {
+            width: 100%;
+            height: 100%;
             margin: 0;
-            padding: 0;
-            box-sizing: border-box;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            height: 100vh;
-            width: 100%;
             overflow: hidden;
-            background: #f5f5f5;
+            background: #e8edf0;
         }
 
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Hide attribution */
-        .leaflet-control-attribution {
-            display: none !important;
-        }
-
-        /* Theme toggle button */
-        .theme-toggle {
+        .map-toolbar {
             position: fixed;
+            z-index: 1000;
             top: 16px;
             right: 16px;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 8px;
-            padding: 10px 14px;
+        }
+
+        .map-style-control { position: relative; }
+
+        .map-style-toggle {
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(28, 39, 49, .12);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .94);
+            box-shadow: 0 3px 14px rgba(27, 39, 51, .18);
+            color: #263238;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-            font-size: 18px;
-            transition: all 0.3s ease;
-            display: flex;
+            transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+        }
+
+        .map-style-toggle:hover {
+            transform: translateY(-1px);
+            background: #fff;
+            box-shadow: 0 6px 18px rgba(27, 39, 51, .22);
+        }
+
+        .layers-icon {
+            position: relative;
+            width: 23px;
+            height: 20px;
+        }
+
+        .layers-icon span {
+            position: absolute;
+            left: 50%;
+            width: 17px;
+            height: 17px;
+            border: 2px solid currentColor;
+            border-radius: 4px;
+            background: inherit;
+            transform: translateX(-50%) rotate(45deg) skew(-5deg, -5deg);
+        }
+
+        .layers-icon span:nth-child(1) { top: 0; opacity: 1; }
+        .layers-icon span:nth-child(2) { top: 5px; opacity: .68; }
+        .layers-icon span:nth-child(3) { top: 10px; opacity: .38; }
+
+        .map-style-menu {
+            position: absolute;
+            top: 54px;
+            right: 0;
+            width: 230px;
+            padding: 7px;
+            border: 1px solid rgba(28, 39, 49, .1);
+            border-radius: 15px;
+            background: rgba(255, 255, 255, .97);
+            box-shadow: 0 10px 32px rgba(27, 39, 51, .22);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-7px) scale(.97);
+            transform-origin: top right;
+            transition: opacity .16s ease, transform .16s ease, visibility .16s;
+        }
+
+        .map-style-control.is-open .map-style-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .map-style-option {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 38px 1fr 18px;
             align-items: center;
-            gap: 8px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .theme-toggle i {
-            font-size: 18px;
-        }
-
-        /* Marker styling */
-        .thermal-marker {
-            background: transparent !important;
-            border: none !important;
-        }
-
-        .marker-badge {
-            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4)) !important;
+            gap: 10px;
+            padding: 9px;
+            border: 0;
+            border-radius: 10px;
+            background: transparent;
+            color: #263238;
             cursor: pointer;
+            font: inherit;
+            text-align: left;
+        }
+
+        .map-style-option:hover { background: #f1f4f5; }
+
+        .map-style-preview {
+            width: 38px;
+            height: 32px;
+            border: 1px solid rgba(30, 43, 49, .16);
+            border-radius: 8px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35);
+        }
+
+        .map-style-preview.light {
+            background: linear-gradient(145deg, #f8f6f0 0 42%, #cfe5ca 43% 57%, #f2df9b 58% 63%, #e9eef1 64%);
+        }
+
+        .map-style-preview.dark {
+            background: linear-gradient(145deg, #15191c 0 42%, #27372f 43% 57%, #665d3b 58% 63%, #24292d 64%);
+        }
+
+        .map-style-preview.realistic {
+            background: linear-gradient(145deg, #56734c 0 30%, #8d795e 31% 47%, #315c72 48% 58%, #73765b 59% 100%);
+        }
+
+        .map-style-name {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .map-style-note {
+            display: block;
+            margin-top: 2px;
+            color: #859299;
+            font-size: 11px;
+        }
+
+        .map-style-check {
+            width: 17px;
+            height: 17px;
+            display: grid;
+            place-items: center;
+            border: 1px solid #b3bec3;
+            border-radius: 50%;
+            color: transparent;
+            font-size: 11px;
+        }
+
+        .map-style-option.is-selected .map-style-check {
+            border-color: #1677ff;
+            background: #1677ff;
+            color: #fff;
+        }
+
+        .map-counter {
+            position: fixed;
+            z-index: 900;
+            right: 16px;
+            bottom: 18px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(31, 45, 52, .88);
+            color: #fff;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, .2);
+            font-size: 12px;
+        }
+
+        .map-crosshair {
+            position: fixed;
+            z-index: 850;
+            top: 50%;
+            left: 50%;
+            width: 42px;
+            height: 42px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 1px 2px rgba(255, 255, 255, .95)) drop-shadow(0 1px 3px rgba(0, 0, 0, .45));
+        }
+
+        .map-crosshair::before,
+        .map-crosshair::after {
+            content: "";
+            position: absolute;
+            background: #18242a;
+            border-radius: 2px;
+        }
+
+        .map-crosshair::before {
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            transform: translateX(-50%);
+        }
+
+        .map-crosshair::after {
+            top: 50%;
+            right: 0;
+            left: 0;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+
+        .map-crosshair__ring {
+            position: absolute;
+            z-index: 1;
+            top: 50%;
+            left: 50%;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #18242a;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .22);
+            transform: translate(-50%, -50%);
+        }
+
+        .map-crosshair__dot {
+            position: absolute;
+            z-index: 2;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #e53935;
+            transform: translate(-50%, -50%);
+        }
+
+        .map-crosshair.is-locked::before,
+        .map-crosshair.is-locked::after { background: #00a86b; }
+        .map-crosshair.is-locked .map-crosshair__ring {
+            border-color: #00a86b;
+            background: rgba(0, 168, 107, .16);
+            transform: translate(-50%, -50%) scale(1.18);
+        }
+        .map-crosshair.is-locked .map-crosshair__dot { background: #00a86b; }
+
+        .crosshair-target {
+            position: fixed;
+            z-index: 851;
+            top: calc(50% + 30px);
+            left: 50%;
+            max-width: min(320px, 76vw);
+            padding: 6px 10px;
+            border: 1px solid rgba(255, 255, 255, .7);
+            border-radius: 7px;
+            background: rgba(20, 31, 36, .9);
+            color: #fff;
+            box-shadow: 0 2px 9px rgba(0, 0, 0, .28);
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
+            text-overflow: ellipsis;
+            transform: translate(-50%, 4px);
+            transition: opacity .12s ease, transform .12s ease;
+            white-space: nowrap;
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .crosshair-target.is-visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .map-marker {
+            border: 0 !important;
+            background: transparent !important;
+        }
+
+        .map-marker__outer {
+            position: relative;
+            width: 30px;
+            height: 30px;
+            display: grid;
+            place-items: center;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 7px rgba(0, 0, 0, .48);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .map-marker__inner {
+            width: 11px;
+            height: 11px;
             border: 2px solid #fff;
-            transition: transform 0.2s ease, filter 0.2s ease;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, .12);
         }
 
-        .marker-badge:hover {
-            transform: scale(1.15);
-            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6)) !important;
+        .map-marker__defect-badge {
+            position: absolute;
+            top: -7px;
+            right: -8px;
+            min-width: 17px;
+            height: 17px;
+            display: grid;
+            place-items: center;
+            padding: 0 4px;
+            border: 2px solid #fff;
+            border-radius: 9px;
+            background: #e53935;
+            color: #fff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+            font-size: 9px;
+            font-weight: 800;
+            line-height: 1;
         }
 
-        /* Apple Light Map Controls */
-        .leaflet-control-zoom {
-            border-radius: 12px !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-            border: none !important;
+        .map-marker:hover .map-marker__outer,
+        .map-marker.is-selected .map-marker__outer,
+        .map-marker.is-aimed .map-marker__outer {
+            transform: scale(1.16);
+            box-shadow: 0 3px 11px rgba(0, 0, 0, .56);
         }
 
-        .leaflet-control-zoom a {
-            background: #fff !important;
-            color: #333 !important;
-            border-bottom: 1px solid #e5e5e5 !important;
-            font-weight: 600;
+        .map-marker.is-aimed .map-marker__outer {
+            outline: 3px solid rgba(0, 168, 107, .82);
+            outline-offset: 3px;
+        }
+
+        .leaflet-tooltip.object-tooltip {
+            padding: 5px 8px;
+            border: 0;
+            border-radius: 5px;
+            background: rgba(23, 30, 34, .9);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .leaflet-tooltip-top.object-tooltip::before {
+            border-top-color: rgba(23, 30, 34, .9);
+        }
+
+        .object-card {
+            position: fixed;
+            z-index: 1200;
+            inset: 0 auto 0 0;
+            width: min(370px, 92vw);
+            background: #f7f8f9;
+            box-shadow: 5px 0 20px rgba(16, 28, 35, .22);
+            transform: translateX(-105%);
+            transition: transform .22s ease;
+        }
+
+        .object-card.is-open { transform: translateX(0); }
+
+        .object-card__header {
+            min-height: 64px;
+            display: grid;
+            grid-template-columns: 44px 1fr;
+            align-items: center;
+            padding: 8px 14px 8px 8px;
+            color: #fff;
+            background: #455a64;
+        }
+
+        .object-card__close {
+            width: 42px;
+            height: 42px;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            font-size: 29px;
+            line-height: 1;
+        }
+
+        .object-card__close:hover { background: rgba(255, 255, 255, .14); }
+
+        .object-card__title {
+            margin: 0;
+            overflow-wrap: anywhere;
             font-size: 16px;
+            font-weight: 700;
         }
 
-        .leaflet-control-zoom a:last-child {
-            border-bottom: none !important;
+        .object-card__body {
+            height: calc(100% - 64px);
+            overflow-y: auto;
+            padding: 20px 22px 32px;
         }
 
-        .leaflet-control-zoom a:hover {
-            background: #f9f9f9 !important;
+        .info-row {
+            padding: 0 0 18px;
         }
 
-        /* Dark theme */
-        body.dark-theme {
-            background: #1a1a1a;
+        .info-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #92a0a8;
+            font-size: 12px;
+            text-transform: lowercase;
         }
 
-        body.dark-theme .theme-toggle {
-            background: rgba(40, 40, 40, 0.95);
-            color: #f0f0f0;
+        .info-value {
+            margin: 0;
+            color: #172229;
+            font-size: 14px;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+            white-space: pre-line;
         }
 
-        body.dark-theme .theme-toggle:hover {
-            background: rgba(50, 50, 50, 0.95);
+        .info-empty { color: #738087; }
+
+        .source-link {
+            color: #1976d2;
+            text-decoration: none;
         }
 
-        body.dark-theme .leaflet-control-zoom a {
-            background: #2a2a2a !important;
-            color: #f0f0f0 !important;
-            border-bottom-color: #444 !important;
+        .source-link:hover { text-decoration: underline; }
+
+        .defect-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
         }
 
-        body.dark-theme .leaflet-control-zoom a:hover {
-            background: #333 !important;
+        .defect-pill {
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #e9eef1;
+            color: #526168;
+            font-size: 11px;
+            font-weight: 750;
         }
 
-        /* Leaflet polylines - ensure visibility */
-        .leaflet-pane-overlayPane {
-            z-index: 400;
+        .defect-pill.active { background: #ffebee; color: #c62828; }
+        .defect-pill.resolved { background: #e8f5e9; color: #2e7d32; }
+
+        .defect-card {
+            margin-top: 9px;
+            padding: 12px;
+            border: 1px solid #dce3e6;
+            border-left: 4px solid #e53935;
+            border-radius: 10px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(26, 39, 46, .06);
         }
 
-        .leaflet-pane-markerPane {
-            z-index: 600;
+        .defect-card.is-resolved { border-left-color: #43a047; }
+
+        .defect-card__top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 9px;
+        }
+
+        .defect-card__title {
+            margin: 0;
+            color: #172229;
+            font-size: 13px;
+            font-weight: 750;
+            line-height: 1.4;
+        }
+
+        .defect-status {
+            flex: 0 0 auto;
+            padding: 3px 6px;
+            border-radius: 5px;
+            background: #ffebee;
+            color: #c62828;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .defect-card.is-resolved .defect-status { background: #e8f5e9; color: #2e7d32; }
+
+        .defect-timer {
+            margin: 9px 0;
+            padding: 9px 10px;
+            border-radius: 8px;
+            background: #fff3e0;
+            color: #b45309;
+            font-size: 12px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .defect-card.is-resolved .defect-timer {
+            background: #eef6ef;
+            color: #2e7d32;
+        }
+
+        .model-badge {
+            display: inline-flex;
+            margin: 7px 0 5px;
+            padding: 3px 7px;
+            border-radius: 5px;
+            background: #e8eaf6;
+            color: #3949ab;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+        }
+
+        .impact-houses {
+            margin: 5px 0 0;
+            padding-left: 17px;
+            color: #3b4a51;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .defect-field {
+            display: grid;
+            grid-template-columns: 92px 1fr;
+            gap: 8px;
+            padding: 3px 0;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .defect-field__label { color: #93a0a7; }
+        .defect-field__value { color: #3b4a51; overflow-wrap: anywhere; }
+
+        body.dark .object-card { background: #20282c; }
+        body.dark .info-value { color: #edf2f4; }
+        body.dark .info-empty, body.dark .info-label { color: #a8b2b7; }
+        body.dark .map-style-toggle { background: rgba(37, 46, 51, .95); color: #fff; border-color: #46545b; }
+        body.dark .map-style-menu { background: rgba(37, 46, 51, .98); border-color: #46545b; }
+        body.dark .map-style-option { color: #fff; }
+        body.dark .map-style-option:hover { background: #303b40; }
+        body.dark .defect-card { background: #293237; border-color: #3b484e; }
+        body.dark .defect-card__title, body.dark .defect-field__value { color: #edf2f4; }
+        body.dark .impact-houses { color: #d9e1e4; }
+
+        .leaflet-control-attribution { display: none; }
+
+        @media (max-width: 600px) {
+            .map-toolbar { top: 10px; right: 10px; }
+            .map-style-toggle { width: 43px; height: 43px; }
+            .map-style-menu { top: 50px; width: 220px; }
+            .map-counter { right: 10px; bottom: 12px; }
+            .object-card { width: 100vw; }
         }
     </style>
 </head>
 <body>
-    <button class="theme-toggle" id="themeToggle">
-        <i class="fas fa-sun"></i>
-        <span>Светлая</span>
-    </button>
-    
-    <div id="map"></div>
-    
-    <!-- Debug log panel -->
-    <div id="debugPanel" style="position: fixed; bottom: 20px; left: 20px; z-index: 999; background: rgba(0,0,0,0.8); color: #0f0; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; max-width: 400px; max-height: 200px; overflow-y: auto; display: none;">
-        <div style="color: #0f0; margin-bottom: 8px; cursor: pointer; font-weight: bold;" onclick="document.getElementById('debugPanel').style.display='none'">✓ DEBUG LOG [click to hide]</div>
-        <div id="debugLog"></div>
+    <div id="map" aria-label="Карта тепловых сетей Костаная"></div>
+
+    <div class="map-crosshair" aria-hidden="true">
+        <span class="map-crosshair__ring"></span>
+        <span class="map-crosshair__dot"></span>
     </div>
-    <button style="position: fixed; bottom: 20px; left: 20px; z-index: 999; padding: 8px 12px; background: #0f0; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="document.getElementById('debugPanel').style.display='block'">DEBUG</button>
+    <div class="crosshair-target" id="crosshairTarget" aria-live="polite"></div>
 
-    <!-- Leaflet JS -->
+    <div class="map-toolbar">
+        <div class="map-style-control" id="mapStyleControl">
+            <button class="map-style-toggle" id="mapStyleToggle" type="button" aria-label="Выбрать вид карты" aria-expanded="false">
+                <span class="layers-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+            </button>
+            <div class="map-style-menu" id="mapStyleMenu" role="menu" aria-label="Вид карты">
+                <button class="map-style-option is-selected" type="button" data-map-style="light" role="menuitem">
+                    <span class="map-style-preview light"></span>
+                    <span><span class="map-style-name">Светлая Apple</span><span class="map-style-note">Светлая схема</span></span>
+                    <span class="map-style-check">✓</span>
+                </button>
+                <button class="map-style-option" type="button" data-map-style="dark" role="menuitem">
+                    <span class="map-style-preview dark"></span>
+                    <span><span class="map-style-name">Тёмная Apple</span><span class="map-style-note">Тёмная схема</span></span>
+                    <span class="map-style-check">✓</span>
+                </button>
+                <button class="map-style-option" type="button" data-map-style="realistic" role="menuitem">
+                    <span class="map-style-preview realistic"></span>
+                    <span><span class="map-style-name">Реалистичная</span><span class="map-style-note">Спутниковые снимки</span></span>
+                    <span class="map-style-check">✓</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="map-counter" id="mapCounter">Загрузка объектов…</div>
+
+    <aside class="object-card" id="objectCard" aria-hidden="true">
+        <header class="object-card__header" id="cardHeader">
+            <button class="object-card__close" id="cardClose" type="button" aria-label="Закрыть справку">‹</button>
+            <h1 class="object-card__title" id="cardTitle">Объект</h1>
+        </header>
+        <div class="object-card__body">
+            <section class="info-row">
+                <span class="info-label">название</span>
+                <p class="info-value" id="cardName"></p>
+            </section>
+            <section class="info-row">
+                <span class="info-label">описание</span>
+                <p class="info-value" id="cardDescription"></p>
+            </section>
+            <section class="info-row">
+                <span class="info-label">раздел карты</span>
+                <p class="info-value" id="cardFolder"></p>
+            </section>
+            <section class="info-row">
+                <span class="info-label">тип объекта</span>
+                <p class="info-value" id="cardType"></p>
+            </section>
+            <section class="info-row">
+                <span class="info-label">координаты</span>
+                <p class="info-value" id="cardCoordinates"></p>
+            </section>
+            <section class="info-row" id="sourceLinkRow" hidden>
+                <span class="info-label">материалы</span>
+                <a class="source-link" id="sourceLink" href="#" target="_blank" rel="noopener noreferrer">Открыть прикреплённый материал ↗</a>
+            </section>
+            <section class="info-row">
+                <span class="info-label">дефекты из реестра</span>
+                <div class="defect-summary" id="defectSummary"></div>
+                <div id="cardDefects"></div>
+            </section>
+        </div>
+    </aside>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script>
-        const themeToggle = document.getElementById('themeToggle');
-        let isDarkTheme = false;
-        let currentTileLayer = null;
-        let markersLayer = null;
-        
-        // Debug logging to page
-        const debugLog = document.getElementById('debugLog');
-        function addLog(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const color = type === 'error' ? '#f00' : type === 'warn' ? '#ff0' : '#0f0';
-            const line = `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
-            debugLog.innerHTML += line;
-            debugLog.parentElement.scrollTop = debugLog.parentElement.scrollHeight;
-        }
-        
-        // Save original console methods
-        const originalLog = console.log;
-        const originalError = console.error;
-        const originalWarn = console.warn;
-        
-        // Override console methods
-        console.log = function(...args) {
-            addLog(args.join(' '));
-            originalLog.apply(console, args);
-        };
-        console.error = function(...args) {
-            addLog('ERROR: ' + args.join(' '), 'error');
-            originalError.apply(console, args);
-        };
-        console.warn = function(...args) {
-            addLog('WARN: ' + args.join(' '), 'warn');
-            originalWarn.apply(console, args);
-        };
-
-        function updateMapTheme() {
-            if (isDarkTheme) {
-                // Dark theme
-                document.body.classList.add('dark-theme');
-                themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Тёмная</span>';
-                
-                // Dark tile layer
-                if (currentTileLayer) {
-                    map.removeLayer(currentTileLayer);
-                }
-                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
-                    subdomains: 'abcd',
-                    maxZoom: 20,
-                    minZoom: 1
-                }).addTo(map);
-            } else {
-                // Light theme
-                document.body.classList.remove('dark-theme');
-                themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Светлая</span>';
-                
-                // Light tile layer
-                if (currentTileLayer) {
-                    map.removeLayer(currentTileLayer);
-                }
-                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    subdomains: 'abcd',
-                    maxZoom: 20,
-                    minZoom: 1
-                }).addTo(map);
-            }
-        }
-
-        themeToggle.addEventListener('click', () => {
-            isDarkTheme = !isDarkTheme;
-            updateMapTheme();
-        });
-
-        // Initialize map centered on Kostanay, Kazakhstan
-        const map = L.map('map', {
+        const map = L.map("map", {
             center: [53.2164, 63.6188],
             zoom: 13,
-            zoomControl: true,
+            zoomControl: false,
             attributionControl: false
         });
 
-        // Load initial theme
-        updateMapTheme();
-
-        // Load thermal network markers
-        markersLayer = L.layerGroup().addTo(map);
-
-        fetch('ktek_built_dataset.json')
-            .then(response => response.json())
-            .then(data => {
-                addLog('✓ Data loaded: ' + data.chambers.length + ' chambers, ' + data.pipelines.length + ' pipes');
-                
-                // Helper function to get color based on status
-                const getStatusColor = (status) => {
-                    switch(status) {
-                        case 'emergency': return '#ef4444'; // Brighter red
-                        case 'warning': return '#f97316';   // Brighter orange
-                        case 'repair': return '#a78bfa';    // Lighter purple
-                        default: return '#4ade80';           // Brighter green
-                    }
-                };
-
-                // Draw pipelines first (so they appear under markers)
-                if (data.pipelines && data.pipelines.length > 0) {
-                    addLog(`Drawing ${data.pipelines.length} pipelines...`);
-                    
-                    let pipelineCount = 0;
-                    let skipped = 0;
-                    
-                    data.pipelines.forEach((pipe, idx) => {
-                        try {
-                            let latlngs = [];
-                            
-                            // Try to parse coordinates - support multiple formats
-                            if (pipe.coordinates && Array.isArray(pipe.coordinates) && pipe.coordinates.length > 1) {
-                                // Format: [[lat, lng], [lat, lng], ...]
-                                if (Array.isArray(pipe.coordinates[0])) {
-                                    latlngs = pipe.coordinates;
-                                }
-                            } else if (pipe.waypoints && pipe.waypoints.length > 1) {
-                                // Format: ["lat lng", "lat lng", ...]
-                                latlngs = pipe.waypoints.map(wp => {
-                                    if (typeof wp === 'string') {
-                                        const [lat, lng] = wp.split(' ').map(Number);
-                                        return [lat, lng];
-                                    }
-                                    return wp;
-                                });
-                            }
-                            
-                            // Only draw if we have valid coordinates
-                            if (latlngs.length > 1) {
-                                pipelineCount++;
-
-                                // Determine color and style
-                                const color = getStatusColor(pipe.status);
-                                const weight = pipe.isMagistral ? 4 : 2;
-                                const opacity = 0.8;
-                                const dashArray = pipe.status === 'emergency' ? '8, 4' : null;
-
-                                // Draw pipeline
-                                const polyline = L.polyline(latlngs, {
-                                    color: color,
-                                    weight: weight,
-                                    opacity: opacity,
-                                    dashArray: dashArray,
-                                    lineCap: 'round',
-                                    lineJoin: 'round'
-                                }).addTo(markersLayer);
-
-                                // Add popup
-                                polyline.bindPopup(`
-                                    <div style="font-size: 11px; min-width: 180px;">
-                                        <strong>${pipe.name}</strong><br/>
-                                        Диаметр: ф${pipe.diameter || '—'} мм<br/>
-                                        Длина: ${pipe.lengthM || '—'} м<br/>
-                                        Год: ${pipe.year || '—'}<br/>
-                                        Тип: ${pipe.isMagistral ? 'Магистраль' : 'Внутрикв.'}<br/>
-                                        Статус: <span style="color: ${color}; font-weight: 600;">${pipe.status}</span>
-                                    </div>
-                                `);
-                            } else {
-                                skipped++;
-                                // No valid coordinates for this pipe
-                                if (idx < 5) {
-                                    addLog(`Pipe ${idx} (${pipe.name}): no valid coords`, 'warn');
-                                }
-                            }
-                        } catch(e) {
-                            // Skip malformed pipes
-                            if (idx < 5) {
-                                addLog(`Error on pipe ${idx}: ${e.message}`, 'error');
-                            }
-                        }
-                    });
-                    
-                    addLog(`✓ Pipelines drawn: ${pipelineCount} of ${data.pipelines.length} (skipped: ${skipped})`);
-                }
-                
-                // Draw chamber markers
-                if (data.chambers && data.chambers.length > 0) {
-                    addLog(`Drawing ${data.chambers.length} chambers...`);
-                    
-                    let markerCount = 0;
-                    data.chambers.forEach((chamber, idx) => {
-                        try {
-                            const statusColor = getStatusColor(chamber.status);
-                            const labelSize = Math.max(70, chamber.id.length * 8);
-                            
-                            const icon = L.divIcon({
-                                className: 'thermal-marker',
-                                html: `<div class="marker-badge" style="background: ${statusColor}; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; white-space: nowrap; box-shadow: 0 3px 8px rgba(0,0,0,0.4); border: 2px solid #fff;">${chamber.id}</div>`,
-                                iconSize: [labelSize, 32],
-                                iconAnchor: [labelSize/2, 16],
-                                popupAnchor: [0, -16]
-                            });
-
-                            const marker = L.marker([chamber.lat, chamber.lng], { icon: icon })
-                                .bindPopup(`
-                                    <div style="font-size: 12px; min-width: 240px; padding: 8px;">
-                                        <strong style="font-size: 14px; color: ${statusColor}; display: block; margin-bottom: 6px;">${chamber.name}</strong>
-                                        <div style="background: #f0f0f0; padding: 6px; border-radius: 4px; margin-bottom: 6px; font-size: 11px;">
-                                            📍 Координаты: ${chamber.lat.toFixed(5)}, ${chamber.lng.toFixed(5)}<br/>
-                                            🔗 Источник: ${chamber.source || '—'}<br/>
-                                            🚦 Статус: <span style="color: ${statusColor}; font-weight: 600;">${chamber.status || 'нормально'}</span>
-                                        </div>
-                                        <strong>Температуры:</strong><br/>
-                                        🔴 Подача: <strong>${chamber.t1 || '—'}°C</strong><br/>
-                                        🔵 Обратка: <strong>${chamber.t2 || '—'}°C</strong><br/>
-                                        <strong>Давления:</strong><br/>
-                                        🔴 Подача: <strong>${chamber.p1 || '—'} бар</strong><br/>
-                                        🔵 Обратка: <strong>${chamber.p2 || '—'} бар</strong>
-                                    </div>
-                                `)
-                                .addTo(markersLayer);
-                            
-                            markerCount++;
-                        } catch(e) {
-                            if (idx < 5) {
-                                addLog(`Error adding chamber ${idx} (${chamber.id}): ${e.message}`, 'error');
-                            }
-                        }
-                    });
-                    
-                    addLog(`✓ Markers drawn: ${markerCount} of ${data.chambers.length}`);
-                }
-
-                addLog(`✅ Map loaded with all data!`);
+        const tileLayers = {
+            light: L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+                subdomains: "abcd",
+                maxZoom: 20
+            }),
+            dark: L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png", {
+                subdomains: "abcd",
+                maxZoom: 20
+            }),
+            realistic: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+                maxZoom: 20
             })
-            .catch(err => {
-                addLog(`Error loading data: ${err.message}`, 'error');
+        };
+
+        const mapStyleControl = document.getElementById("mapStyleControl");
+        const mapStyleToggle = document.getElementById("mapStyleToggle");
+        const mapStyleOptions = [...document.querySelectorAll("[data-map-style]")];
+        let activeStyle = "light";
+        try {
+            const savedStyle = localStorage.getItem("ktek_map_style");
+            if (tileLayers[savedStyle]) activeStyle = savedStyle;
+        } catch (error) {
+            console.warn("Не удалось прочитать настройку карты:", error);
+        }
+        let activeTiles = tileLayers[activeStyle].addTo(map);
+        let selectedLayer = null;
+        let aimedTarget = null;
+        let aimFrame = null;
+        const selectableObjects = [];
+        const networkLayer = L.layerGroup().addTo(map);
+        const objectsLayer = L.layerGroup().addTo(map);
+
+        const card = document.getElementById("objectCard");
+        const cardHeader = document.getElementById("cardHeader");
+        const cardTitle = document.getElementById("cardTitle");
+        const cardName = document.getElementById("cardName");
+        const cardDescription = document.getElementById("cardDescription");
+        const cardFolder = document.getElementById("cardFolder");
+        const cardType = document.getElementById("cardType");
+        const cardCoordinates = document.getElementById("cardCoordinates");
+        const sourceLinkRow = document.getElementById("sourceLinkRow");
+        const sourceLink = document.getElementById("sourceLink");
+        const defectSummary = document.getElementById("defectSummary");
+        const cardDefects = document.getElementById("cardDefects");
+        const mapCounter = document.getElementById("mapCounter");
+        const crosshair = document.querySelector(".map-crosshair");
+        const crosshairTarget = document.getElementById("crosshairTarget");
+
+        function safeColor(value, fallback = "#455A64") {
+            return /^#[0-9a-f]{6}$/i.test(value || "") ? value : fallback;
+        }
+
+        function closeMapStyleMenu() {
+            mapStyleControl.classList.remove("is-open");
+            mapStyleToggle.setAttribute("aria-expanded", "false");
+        }
+
+        function setMapStyle(style) {
+            if (!tileLayers[style]) return;
+            map.removeLayer(activeTiles);
+            activeStyle = style;
+            activeTiles = tileLayers[style].addTo(map);
+            activeTiles.bringToBack();
+            document.body.classList.toggle("dark", style === "dark");
+            mapStyleOptions.forEach(option => {
+                const selected = option.dataset.mapStyle === style;
+                option.classList.toggle("is-selected", selected);
+                option.setAttribute("aria-current", selected ? "true" : "false");
+            });
+            try {
+                localStorage.setItem("ktek_map_style", style);
+            } catch (error) {
+                console.warn("Не удалось сохранить настройку карты:", error);
+            }
+            closeMapStyleMenu();
+        }
+
+        function coordinatesLabel(object, type) {
+            if (type === "Объект тепловой сети") {
+                return `${object.lat.toFixed(6)}, ${object.lng.toFixed(6)}`;
+            }
+            const start = object.coordinates[0];
+            const end = object.coordinates[object.coordinates.length - 1];
+            return `Начало: ${start[0].toFixed(6)}, ${start[1].toFixed(6)}\nКонец: ${end[0].toFixed(6)}, ${end[1].toFixed(6)}`;
+        }
+
+        function formatDate(value) {
+            if (!value) return "";
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return String(value);
+            return new Intl.DateTimeFormat("ru-RU", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            }).format(date);
+        }
+
+        function formatDuration(milliseconds) {
+            if (!Number.isFinite(milliseconds)) return "Нет данных";
+            let seconds = Math.max(0, Math.floor(milliseconds / 1000));
+            const days = Math.floor(seconds / 86400);
+            seconds %= 86400;
+            const hours = Math.floor(seconds / 3600);
+            seconds %= 3600;
+            const minutes = Math.floor(seconds / 60);
+            seconds %= 60;
+            const pad = value => String(value).padStart(2, "0");
+            return `${days} дн. ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        }
+
+        function updateLiveDefectTimers() {
+            document.querySelectorAll(".live-defect-timer[data-start]").forEach(timer => {
+                const start = new Date(timer.dataset.start).getTime();
+                if (Number.isFinite(start)) {
+                    timer.textContent = `С момента обнаружения: ${formatDuration(Date.now() - start)}`;
+                }
+            });
+        }
+
+        function appendDefectField(container, label, value) {
+            if (value === undefined || value === null || String(value).trim() === "") return;
+            const row = document.createElement("div");
+            row.className = "defect-field";
+            const fieldLabel = document.createElement("span");
+            fieldLabel.className = "defect-field__label";
+            fieldLabel.textContent = label;
+            const fieldValue = document.createElement("span");
+            fieldValue.className = "defect-field__value";
+            fieldValue.textContent = value;
+            row.append(fieldLabel, fieldValue);
+            container.appendChild(row);
+        }
+
+        function renderDefects(object) {
+            const defects = [...(object.defects || [])].sort((a, b) => {
+                if (a.resolved !== b.resolved) return Number(a.resolved) - Number(b.resolved);
+                return String(b.dateObserved || "").localeCompare(String(a.dateObserved || ""));
+            });
+            const activeCount = defects.filter(defect => !defect.resolved).length;
+            const resolvedCount = defects.length - activeCount;
+            defectSummary.replaceChildren();
+            cardDefects.replaceChildren();
+
+            if (!defects.length) {
+                const empty = document.createElement("p");
+                empty.className = "info-value info-empty";
+                empty.textContent = "По этому объекту записей в реестре нет.";
+                cardDefects.appendChild(empty);
+                return;
+            }
+
+            if (activeCount) {
+                const pill = document.createElement("span");
+                pill.className = "defect-pill active";
+                pill.textContent = `Активных: ${activeCount}`;
+                defectSummary.appendChild(pill);
+            }
+            if (resolvedCount) {
+                const pill = document.createElement("span");
+                pill.className = "defect-pill resolved";
+                pill.textContent = `Устранено: ${resolvedCount}`;
+                defectSummary.appendChild(pill);
+            }
+
+            defects.forEach(defect => {
+                const defectCard = document.createElement("article");
+                defectCard.className = `defect-card${defect.resolved ? " is-resolved" : ""}`;
+                const top = document.createElement("div");
+                top.className = "defect-card__top";
+                const title = document.createElement("h3");
+                title.className = "defect-card__title";
+                title.textContent = defect.defectType || "Тип дефекта не указан";
+                const status = document.createElement("span");
+                status.className = "defect-status";
+                status.textContent = defect.resolved ? "Устранён" : "Активен";
+                top.append(title, status);
+                defectCard.appendChild(top);
+
+                const timer = document.createElement("div");
+                timer.className = `defect-timer${defect.resolved ? "" : " live-defect-timer"}`;
+                const observedAt = new Date(defect.dateObserved).getTime();
+                if (defect.resolved) {
+                    const resolvedAt = new Date(defect.resolveDate).getTime();
+                    const registeredDuration = resolvedAt - observedAt;
+                    if (registeredDuration >= 0) {
+                        timer.textContent = `Срок устранения: ${formatDuration(registeredDuration)}`;
+                    } else {
+                        const modelHours = 4 + Number(defect.priority || 5) * 2 + Number(defect.id || 0) % 12;
+                        timer.textContent = `Модельный срок устранения: ${formatDuration(modelHours * 3600000)}`;
+                    }
+                } else {
+                    timer.dataset.start = defect.dateObserved;
+                    timer.textContent = `С момента обнаружения: ${formatDuration(Date.now() - observedAt)}`;
+                }
+                defectCard.appendChild(timer);
+
+                appendDefectField(defectCard, "Объект", defect.tk);
+                appendDefectField(defectCard, "Адрес", defect.address);
+                appendDefectField(defectCard, "Обнаружен", formatDate(defect.dateObserved));
+                appendDefectField(defectCard, "Тип сети", defect.networkType);
+                appendDefectField(defectCard, "Источник", defect.source);
+                appendDefectField(defectCard, "Приоритет", defect.priority);
+                appendDefectField(defectCard, "Обнаружил", defect.detectedBy);
+                appendDefectField(defectCard, "Мастер", defect.master);
+                appendDefectField(defectCard, "План", formatDate(defect.planDate));
+                appendDefectField(defectCard, "Устранён", formatDate(defect.resolveDate));
+                appendDefectField(defectCard, "Примечание", defect.note);
+
+                if (defect.impact) {
+                    const modelBadge = document.createElement("span");
+                    modelBadge.className = "model-badge";
+                    modelBadge.textContent = "Модельная оценка охвата";
+                    defectCard.appendChild(modelBadge);
+                    appendDefectField(defectCard, "Метод", defect.impact.method);
+                    appendDefectField(defectCard, "Улицы", defect.impact.streets.join(", "));
+                    appendDefectField(defectCard, "Домов", defect.impact.housesCount);
+                    appendDefectField(defectCard, "Квартир", `≈ ${defect.impact.flatsEstimate}`);
+                    const housesList = document.createElement("ul");
+                    housesList.className = "impact-houses";
+                    defect.impact.houses.forEach(address => {
+                        const listItem = document.createElement("li");
+                        listItem.textContent = address;
+                        housesList.appendChild(listItem);
+                    });
+                    defectCard.appendChild(housesList);
+                }
+                cardDefects.appendChild(defectCard);
+            });
+            updateLiveDefectTimers();
+        }
+
+        function closeCard() {
+            card.classList.remove("is-open");
+            card.setAttribute("aria-hidden", "true");
+            if (selectedLayer && selectedLayer.getElement) {
+                selectedLayer.getElement()?.classList.remove("is-selected");
+            }
+            selectedLayer = null;
+        }
+
+        function pointToSegmentDistance(point, start, end) {
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            if (dx === 0 && dy === 0) return point.distanceTo(start);
+            const ratio = Math.max(0, Math.min(1,
+                ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)
+            ));
+            const projection = L.point(start.x + ratio * dx, start.y + ratio * dy);
+            return point.distanceTo(projection);
+        }
+
+        function targetDistance(target, center) {
+            if (target.kind === "point") {
+                return center.distanceTo(map.latLngToContainerPoint(target.latlng));
+            }
+            let minimum = Infinity;
+            const coordinates = target.object.coordinates;
+            for (let index = 1; index < coordinates.length; index += 1) {
+                const start = map.latLngToContainerPoint(coordinates[index - 1]);
+                const end = map.latLngToContainerPoint(coordinates[index]);
+                minimum = Math.min(minimum, pointToSegmentDistance(center, start, end));
+            }
+            return minimum;
+        }
+
+        function clearAimHighlight(target) {
+            if (!target) return;
+            if (target.kind === "point") {
+                target.layer.getElement()?.classList.remove("is-aimed");
+            } else {
+                target.layer.setStyle(target.baseStyle);
+            }
+        }
+
+        function applyAimHighlight(target) {
+            if (target.kind === "point") {
+                target.layer.getElement()?.classList.add("is-aimed");
+            } else {
+                target.layer.setStyle({
+                    color: "#00A86B",
+                    weight: target.baseStyle.weight + 3,
+                    opacity: 1
+                });
+                target.layer.bringToFront();
+            }
+        }
+
+        function updateCrosshairTarget() {
+            aimFrame = null;
+            if (!selectableObjects.length) return;
+            const center = map.getSize().divideBy(2);
+            let nearest = null;
+            let nearestDistance = 30;
+
+            selectableObjects.forEach(target => {
+                const distance = targetDistance(target, center);
+                if (distance < nearestDistance) {
+                    nearest = target;
+                    nearestDistance = distance;
+                }
             });
 
-        console.log('✓ Map with thermal network markers loaded');
+            if (nearest === aimedTarget) return;
+            clearAimHighlight(aimedTarget);
+            aimedTarget = nearest;
+            crosshair.classList.toggle("is-locked", Boolean(nearest));
+            crosshairTarget.classList.toggle("is-visible", Boolean(nearest));
+            crosshairTarget.textContent = nearest ? `${nearest.object.name} · нажмите для справки` : "";
+            if (nearest) applyAimHighlight(nearest);
+        }
+
+        function scheduleCrosshairUpdate() {
+            if (aimFrame !== null) return;
+            aimFrame = requestAnimationFrame(updateCrosshairTarget);
+        }
+
+        function openCard(object, type, layer) {
+            closeCard();
+            selectedLayer = layer;
+            if (layer.getElement) layer.getElement()?.classList.add("is-selected");
+
+            const color = safeColor(object.color);
+            cardHeader.style.background = color;
+            cardTitle.textContent = object.name;
+            cardName.textContent = object.name;
+            cardDescription.textContent = object.description || "Описание пока не добавлено.";
+            cardDescription.classList.toggle("info-empty", !object.description);
+            cardFolder.textContent = object.folder || "Без раздела";
+            cardType.textContent = type;
+            cardCoordinates.textContent = coordinatesLabel(object, type);
+
+            const hasSafeLink = /^https:\/\//i.test(object.link || "");
+            sourceLinkRow.hidden = !hasSafeLink;
+            if (hasSafeLink) sourceLink.href = object.link;
+            renderDefects(object);
+
+            card.classList.add("is-open");
+            card.setAttribute("aria-hidden", "false");
+        }
+
+        function markerIcon(object) {
+            const safe = safeColor(object.color, "#1A73E8");
+            const activeDefects = (object.defects || []).filter(defect => !defect.resolved).length;
+            const defectBadge = activeDefects
+                ? `<span class="map-marker__defect-badge">${activeDefects > 9 ? "9+" : activeDefects}</span>`
+                : "";
+            return L.divIcon({
+                className: "map-marker",
+                html: `<span class="map-marker__outer" style="background:${safe}"><span class="map-marker__inner"></span>${defectBadge}</span>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                tooltipAnchor: [0, -16]
+            });
+        }
+
+        function renderMap(data) {
+            const bounds = [];
+
+            data.lines.forEach(line => {
+                const baseStyle = {
+                    color: safeColor(line.color, "#A52714"),
+                    weight: line.weight || 3,
+                    opacity: 0.86,
+                    lineCap: "round",
+                    lineJoin: "round"
+                };
+                const polyline = L.polyline(line.coordinates, baseStyle).addTo(networkLayer);
+                selectableObjects.push({
+                    kind: "line",
+                    object: line,
+                    type: "Участок тепловой сети",
+                    layer: polyline,
+                    baseStyle
+                });
+
+                const lineDefectCount = (line.defects || []).length;
+                polyline.bindTooltip(lineDefectCount ? `${line.name} · дефектов: ${lineDefectCount}` : line.name, {
+                    className: "object-tooltip",
+                    sticky: true,
+                    direction: "top"
+                });
+                polyline.on("click", event => {
+                    if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+                    openCard(line, "Участок тепловой сети", polyline);
+                });
+                bounds.push(...line.coordinates);
+            });
+
+            data.points.forEach(object => {
+                const marker = L.marker([object.lat, object.lng], {
+                    icon: markerIcon(object),
+                    riseOnHover: true,
+                    title: object.name
+                }).addTo(objectsLayer);
+                selectableObjects.push({
+                    kind: "point",
+                    object,
+                    type: "Объект тепловой сети",
+                    layer: marker,
+                    latlng: L.latLng(object.lat, object.lng)
+                });
+
+                const defectCount = (object.defects || []).length;
+                marker.bindTooltip(defectCount ? `${object.name} · дефектов: ${defectCount}` : object.name, {
+                    className: "object-tooltip",
+                    direction: "top",
+                    offset: [0, -2]
+                });
+                marker.on("click", event => {
+                    if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+                    openCard(object, "Объект тепловой сети", marker);
+                });
+                bounds.push([object.lat, object.lng]);
+            });
+
+            mapCounter.textContent = `${data.points.length} объектов · ${data.lines.length} участков`;
+            scheduleCrosshairUpdate();
+        }
+
+        document.getElementById("cardClose").addEventListener("click", closeCard);
+        map.on("click", () => {
+            if (aimedTarget) {
+                openCard(aimedTarget.object, aimedTarget.type, aimedTarget.layer);
+            } else {
+                closeCard();
+            }
+            closeMapStyleMenu();
+        });
+        map.on("move zoom resize", scheduleCrosshairUpdate);
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape") {
+                closeCard();
+                closeMapStyleMenu();
+            }
+        });
+
+        mapStyleToggle.addEventListener("click", event => {
+            event.stopPropagation();
+            const isOpen = mapStyleControl.classList.toggle("is-open");
+            mapStyleToggle.setAttribute("aria-expanded", String(isOpen));
+        });
+        mapStyleOptions.forEach(option => {
+            option.addEventListener("click", event => {
+                event.stopPropagation();
+                setMapStyle(option.dataset.mapStyle);
+            });
+        });
+        document.addEventListener("click", event => {
+            if (!mapStyleControl.contains(event.target)) closeMapStyleMenu();
+        });
+        setMapStyle(activeStyle);
+        window.setInterval(updateLiveDefectTimers, 1000);
+
+        fetch("ktek_map_objects.json?v=20260813-defects", { cache: "no-store" })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(renderMap)
+            .catch(error => {
+                mapCounter.textContent = "Не удалось загрузить данные";
+                console.error("Ошибка загрузки карты:", error);
+            });
     </script>
 </body>
 </html>
