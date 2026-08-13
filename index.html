@@ -135,32 +135,21 @@
                 document.body.classList.add('dark-theme');
                 themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Тёмная</span>';
                 
-                // Dark tile layer
+                // Dark tile layer - CartoDB Positron Dark
                 if (currentTileLayer) {
                     map.removeLayer(currentTileLayer);
                 }
-                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+                currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
                     subdomains: 'abcd',
                     maxZoom: 20,
                     minZoom: 1
                 }).addTo(map);
-                
-                // Apply dark overlay
-                const style = document.createElement('style');
-                style.id = 'darkOverlay';
-                style.innerHTML = `
-                    #map { filter: invert(0.93) hue-rotate(180deg); }
-                    #map img { filter: invert(1) hue-rotate(180deg); }
-                `;
-                if (!document.getElementById('darkOverlay')) {
-                    document.head.appendChild(style);
-                }
             } else {
                 // Light theme
                 document.body.classList.remove('dark-theme');
                 themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Светлая</span>';
                 
-                // Light tile layer
+                // Light tile layer - CartoDB Voyager
                 if (currentTileLayer) {
                     map.removeLayer(currentTileLayer);
                 }
@@ -169,10 +158,6 @@
                     maxZoom: 20,
                     minZoom: 1
                 }).addTo(map);
-                
-                // Remove dark overlay
-                const darkOverlay = document.getElementById('darkOverlay');
-                if (darkOverlay) darkOverlay.remove();
             }
         }
 
