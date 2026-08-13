@@ -20,6 +20,17 @@ window.KTEKApp = {
     selectedIncident: null,
     vehicleAnimationTimer: null,
 
+    getMapMarkerSvg(type) {
+        const icons = {
+            tets: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 22V12l8-8 8 8v10H4zm2-2h12V13l-6-6-6 6v7zm3-5h2v5H9v-5zm4 0h2v5h-2v-5zm-4-3h6v2H9v-2z" fill="currentColor"/></svg>',
+            rk: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            bmk: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M17 8C8 10 5.9 16.2 5 20l1.5.5c.5-1.9 2.5-6.3 9.5-7.5L14 17h7l-4-9z" fill="currentColor"/></svg>',
+            vehicle: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 13h12l2-4h4a1 1 0 0 1 1 1v4h-1a2 2 0 1 1-4 0H9a2 2 0 1 1-4 0H3v-1zm2-7h8l2 3H5V6zm3 10a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z" fill="currentColor"/></svg>',
+            chamber: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9zm2 0v9h12v-9H6zm2 2h8v2H8v-2zm0 4h5v2H8v-2z" fill="currentColor"/></svg>'
+        };
+        return icons[type] || icons.chamber;
+    },
+
     async init() {
         console.log("🚀 [KTEK App] Starting KTEK SCADA Digital Twin 2.0...");
         
@@ -54,11 +65,12 @@ window.KTEKApp = {
         const mapContainer = document.getElementById('map');
         if (!mapContainer) return;
 
-        // Centered around Kostanay city center
+        // Centered around Kostanay city center using more stable city coordinates
         this.map = L.map('map', {
-            center: [53.205, 63.615],
+            center: [53.2164, 63.6188],
             zoom: 13,
-            zoomControl: true
+            zoomControl: true,
+            preferCanvas: true
         });
 
         // CartoDB Voyager Tile Layer (Ultra-clean Light Apple Maps style)
@@ -140,13 +152,7 @@ window.KTEKApp = {
 
         // 2. Render Heat Sources (ТЭЦ / БМК)
         data.sources.forEach(src => {
-            // SVG icons per type — NO FontAwesome (renders as shuriken in divIcon!)
-            const svgByType = {
-                tets: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 22V12l8-8 8 8v10H4zm2-2h12V13l-6-6-6 6v7zm3-5h2v5H9v-5zm4 0h2v5h-2v-5zm-4-3h6v2H9v-2z"/></svg>`,
-                rk:   `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
-                bmk:  `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 8C8 10 5.9 16.2 5 20l1.5.5c.5-1.9 2.5-6.3 9.5-7.5L14 17h7l-4-9z"/></svg>`
-            };
-            const svgHtml = svgByType[src.type] || svgByType.rk;
+            const svgHtml = this.getMapMarkerSvg(src.type) || this.getMapMarkerSvg('rk');
             const shortId = src.id.replace('BMK','').replace('TETs','T-').replace('RK','RK');
 
             const icon = L.divIcon({
@@ -255,7 +261,7 @@ window.KTEKApp = {
         data.vehicles.forEach(v => {
             const icon = L.divIcon({
                 className: 'custom-vehicle-icon',
-                html: `<div class="vehicle-pin"><i class="fa fa-truck-medical"></i></div>`,
+                html: `<div class="vehicle-pin">${this.getMapMarkerSvg('vehicle')}</div>`,
                 iconSize: [28, 28]
             });
             const marker = L.marker([v.lat, v.lng], { icon: icon });
