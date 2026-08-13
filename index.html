@@ -128,6 +128,7 @@
         const themeToggle = document.getElementById('themeToggle');
         let isDarkTheme = false;
         let currentTileLayer = null;
+        let markersLayer = null;
 
         function updateMapTheme() {
             if (isDarkTheme) {
@@ -135,7 +136,7 @@
                 document.body.classList.add('dark-theme');
                 themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Тёмная</span>';
                 
-                // Dark tile layer - CartoDB Positron Dark
+                // Dark tile layer
                 if (currentTileLayer) {
                     map.removeLayer(currentTileLayer);
                 }
@@ -149,7 +150,7 @@
                 document.body.classList.remove('dark-theme');
                 themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Светлая</span>';
                 
-                // Light tile layer - CartoDB Voyager
+                // Light tile layer
                 if (currentTileLayer) {
                     map.removeLayer(currentTileLayer);
                 }
@@ -177,7 +178,74 @@
         // Load initial theme
         updateMapTheme();
 
-        console.log('✓ Map with theme toggle loaded successfully');
+        // Load thermal network markers
+        markersLayer = L.layerGroup().addTo(map);
+
+        fetch('ktek_built_dataset.json')
+            .then(response => response.json())
+            .then(data => {
+                console.log('✓ Thermal network data loaded');
+                
+                // Add chamber/source markers
+                if (data.chambers) {
+                    data.chambers.forEach(chamber => {
+                        const icon = L.divIcon({
+                            className: 'thermal-marker',
+                            html: `<div class="marker-badge" style="background: #0284c7; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">${chamber.id}</div>`,
+                            iconSize: [60, 24],
+                            iconAnchor: [30, 12],
+                            popupAnchor: [0, -12]
+                        });
+
+                        const marker = L.marker([chamber.lat, chamber.lng], { icon: icon })
+                            .bindPopup(`
+                                <div style="font-size: 12px; min-width: 200px;">
+                                    <strong>${chamber.name}</strong><br/>
+                                    Координаты: ${chamber.lat.toFixed(4)}, ${chamber.lng.toFixed(4)}<br/>
+                                    Тип: ${chamber.type || 'узел'}<br/>
+                                    Статус: ${chamber.status || 'нормально'}<br/>
+                                    T1: ${chamber.t1}°C, T2: ${chamber.t2}°C<br/>
+                                    P1: ${chamber.p1} бар, P2: ${chamber.p2} бар
+                                </div>
+                            `)
+                            .addTo(markersLayer);
+                    });
+                }
+                
+                // Add source markers if available
+                if (data.sources) {
+                    data.sources.forEach(source => {
+                        const icon = L.divIcon({
+                            className: 'thermal-marker',
+                            html: `<div class="marker-badge" style="background: #dc2626; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">${source.id}</div>`,
+                            iconSize: [60, 24],
+                            iconAnchor: [30, 12],
+                            popupAnchor: [0, -12]
+                        });
+
+                        const marker = L.marker([source.lat, source.lng], { icon: icon })
+                            .bindPopup(`
+                                <div style="font-size: 12px; min-width: 200px;">
+                                    <strong>${source.name}</strong><br/>
+                                    Координаты: ${source.lat.toFixed(4)}, ${source.lng.toFixed(4)}<br/>
+                                    Мощность: ${source.powerGcal} Гкал/ч<br/>
+                                    T1: ${source.t1}°C, T2: ${source.t2}°C<br/>
+                                    P1: ${source.p1} бар, P2: ${source.p2} бар<br/>
+                                    Расход: ${source.flowG} т/ч
+                                </div>
+                            `)
+                            .addTo(markersLayer);
+                    });
+                }
+
+                console.log(`✓ Added markers to map`);
+            })
+            .catch(err => {
+                console.error('Error loading thermal data:', err);
+                console.log('Continuing without markers...');
+            });
+
+        console.log('✓ Map with thermal network markers loaded');
     </script>
 </body>
 </html>
