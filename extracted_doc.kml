@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name><![CDATA[карта "Тепловые сети города Костанай"]]></name>
+    <description/>
+    <NetworkLink>
+      <name><![CDATA[карта "Тепловые сети города Костанай"]]></name>
+      <Link>
+        <href>https://www.google.com/maps/d/u/0/kml?mid=1a0TrYqu031MBHQx7KV2IUqVQrK6Fq8o</href>
+      </Link>
+    </NetworkLink>
+  </Document>
+</kml>

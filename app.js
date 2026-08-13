@@ -105,7 +105,8 @@ window.KTEKApp = {
                     color = "#f59e0b";
                 }
 
-                const line = L.polyline([[fromNode.lat, fromNode.lng], [toNode.lat, toNode.lng]], {
+                const linePoints = pipe.waypoints || [[fromNode.lat, fromNode.lng], [toNode.lat, toNode.lng]];
+                const line = L.polyline(linePoints, {
                     color: color,
                     weight: pipe.isMagistral ? 7 : 4,
                     opacity: pipe.isCutOff ? 0.5 : 0.9,
