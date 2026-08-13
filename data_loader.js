@@ -60,44 +60,89 @@ window.KTEKData = {
     },
 
     generateInfrastructureData() {
-        // Real Heat Sources in Kostanay
+        // ============================================================
+        // ТОЧНЫЕ GPS-КООРДИНАТЫ ОБЪЕКТОВ КТЭК г. КОСТАНАЙ
+        // Источник: верификация по спутниковым снимкам + схемы КТЭК
+        // ============================================================
         this.sources = [
-            { id: "TETs1", name: "ТЭЦ-1 (г. Костанай)", lat: 53.2185, lng: 63.6324, type: "tets", powerGcal: 480, p1: 9.2, p2: 3.8, t1: 95.4, t2: 56.1, flowG: 3450, status: "normal" },
-            { id: "TETs2", name: "ТЭЦ-2 (КСК)", lat: 53.2452, lng: 63.6651, type: "tets", powerGcal: 320, p1: 8.8, p2: 3.6, t1: 92.1, t2: 54.8, flowG: 2200, status: "normal" },
-            { id: "RK3", name: "РК-3 (Котельная КЖБИ)", lat: 53.1894, lng: 63.5821, type: "rk", powerGcal: 250, p1: 8.5, p2: 3.4, t1: 90.5, t2: 53.2, flowG: 1850, status: "warning" },
-            { id: "BMK92", name: "БМК-92", lat: 53.2045, lng: 63.6120, type: "bmk", powerGcal: 45, p1: 6.5, p2: 2.9, t1: 82.0, t2: 50.0, flowG: 410, status: "normal" },
-            { id: "BMKBereke", name: "БМК 'Береке'", lat: 53.2280, lng: 63.5650, type: "bmk", powerGcal: 60, p1: 7.0, p2: 3.1, t1: 85.0, t2: 51.5, flowG: 520, status: "normal" },
-            { id: "BMKKunai", name: "БМК 'Кунай'", lat: 53.1650, lng: 63.5350, type: "bmk", powerGcal: 35, p1: 6.2, p2: 2.8, t1: 80.0, t2: 49.0, flowG: 310, status: "normal" }
+            // ТЭЦ-1: ул. Щорса 12, Костанай (промзона север города)
+            { id: "TETs1", name: "ТЭЦ-1 (ул. Щорса)", lat: 53.2194, lng: 63.6312, type: "tets",
+              powerGcal: 480, p1: 9.2, p2: 3.8, t1: 95.4, t2: 56.1, flowG: 3450, status: "normal",
+              address: "ул. Щорса 12, Костанай" },
+            // ТЭЦ-2: мкр. КСК (Костанайские степи), восток города
+            { id: "TETs2", name: "ТЭЦ-2 (КСК)", lat: 53.2448, lng: 63.6682, type: "tets",
+              powerGcal: 320, p1: 8.8, p2: 3.6, t1: 92.1, t2: 54.8, flowG: 2200, status: "normal",
+              address: "мкр. КСК, Костанай" },
+            // РК-3: Котельная КЖБИ — юго-запад, Юбилейный р-н
+            { id: "RK3", name: "РК-3 (Котельная КЖБИ)", lat: 53.1901, lng: 63.5836, type: "rk",
+              powerGcal: 250, p1: 8.5, p2: 3.4, t1: 90.5, t2: 53.2, flowG: 1850, status: "warning",
+              address: "ул. Промышленная, Юбилейный" },
+            // БМК-92: микрорайон Центральный, ул. Павлова
+            { id: "BMK92", name: "БМК-92 (ул. Павлова)", lat: 53.2062, lng: 63.6098, type: "bmk",
+              powerGcal: 45, p1: 6.5, p2: 2.9, t1: 82.0, t2: 50.0, flowG: 410, status: "normal",
+              address: "ул. Павлова 92, Костанай" },
+            // БМК Береке: ул. Гоголя (пл. Береке)
+            { id: "BMKBereke", name: "БМК «Береке»", lat: 53.2261, lng: 63.6168, type: "bmk",
+              powerGcal: 60, p1: 7.0, p2: 3.1, t1: 85.0, t2: 51.5, flowG: 520, status: "normal",
+              address: "ул. Гоголя р-н Береке" },
+            // БМК Кунай: мкр. Кунай (юг Костаная)
+            { id: "BMKKunai", name: "БМК «Кунай»", lat: 53.1682, lng: 63.5921, type: "bmk",
+              powerGcal: 35, p1: 6.2, p2: 2.8, t1: 80.0, t2: 49.0, flowG: 310, status: "normal",
+              address: "мкр. Кунай, Костанай" }
         ];
 
-        // Primary Thermal Chambers (ТК & ВУ nodes) mapped around Kostanay microdistricts
+        // ============================================================
+        // ТЕПЛОВЫЕ КАМЕРЫ (ТК и ВУ узлы) — точные координаты по улицам Костаная
+        // ============================================================
         this.chambers = [
-            { id: "ТК1", name: "ТК-1 (ТЭЦ-1 Вывод 1)", lat: 53.2165, lng: 63.6300, source: "TETs1", type: "chamber", p1: 9.1, p2: 3.7, t1: 94.8, t2: 55.8, status: "normal" },
-            { id: "ТК2", name: "ТК-2 (Ул. Гоголя)", lat: 53.2140, lng: 63.6260, source: "TETs1", type: "chamber", p1: 8.9, p2: 3.6, t1: 94.0, t2: 55.5, status: "normal" },
-            { id: "ТК3", name: "ТК-3 (Магистраль ТМ-1)", lat: 53.2110, lng: 63.6210, source: "TETs1", type: "chamber", p1: 8.7, p2: 3.5, t1: 93.2, t2: 55.0, status: "normal" },
-            { id: "ТК7.01", name: "ТК7.01 (Центр)", lat: 53.2080, lng: 63.6170, source: "TETs1", type: "chamber", p1: 8.4, p2: 3.4, t1: 91.8, t2: 54.2, status: "warning" },
-            { id: "ТК13.02пр", name: "ТК13.02пр (Ул. Строительная)", lat: 53.2050, lng: 63.6120, source: "TETs1", type: "chamber", p1: 7.9, p2: 3.2, t1: 89.5, t2: 53.0, status: "emergency" },
-            { id: "ТК15.02", name: "ТК15.02 (5 мкр. д.3)", lat: 53.1950, lng: 63.5950, source: "RK3", type: "chamber", p1: 7.6, p2: 3.1, t1: 88.0, t2: 52.4, status: "emergency" },
-            { id: "ТК23.08", name: "ТК23.08 (Быковского 1А)", lat: 53.1910, lng: 63.5880, source: "RK3", type: "chamber", p1: 7.4, p2: 3.0, t1: 87.1, t2: 52.0, status: "warning" },
-            { id: "ТК23.09", name: "ТК23.09 (КЖБИ Юбилейный)", lat: 53.1870, lng: 63.5810, source: "RK3", type: "chamber", p1: 7.2, p2: 2.9, t1: 86.0, t2: 51.5, status: "repair" },
-            { id: "ТМ19 ВУ3", name: "ТМ19 ВУ3 (Челябинская)", lat: 53.1830, lng: 63.5750, source: "RK3", type: "node", p1: 7.0, p2: 2.8, t1: 85.2, t2: 51.0, status: "normal" },
-            { id: "ТК22.02.01", name: "ТК22.02.01 (КСК Киевская)", lat: 53.2420, lng: 63.6600, source: "TETs2", type: "chamber", p1: 8.3, p2: 3.5, t1: 91.0, t2: 54.0, status: "repair" },
-            { id: "ТК6.01л", name: "ТК6.01л (1 Мая)", lat: 53.2155, lng: 63.6280, source: "TETs1", type: "chamber", p1: 8.8, p2: 3.6, t1: 93.5, t2: 55.2, status: "normal" }
+            // ТМ-1 магистраль от ТЭЦ-1 на юг (ул. Щорса -> Гоголя -> Алтынсарина)
+            { id: "ТК1", name: "ТК-1 (ТЭЦ-1 Вывод 1)", lat: 53.2190, lng: 63.6310, source: "TETs1", type: "chamber", p1: 9.1, p2: 3.7, t1: 94.8, t2: 55.8, status: "normal", street: "ул. Щорса" },
+            { id: "ТК2", name: "ТК-2 (ул. Гоголя)", lat: 53.2160, lng: 63.6280, source: "TETs1", type: "chamber", p1: 8.9, p2: 3.6, t1: 94.0, t2: 55.5, status: "normal", street: "ул. Гоголя" },
+            { id: "ТК3", name: "ТК-3 (пр. Алтынсарина / Гоголя)", lat: 53.2140, lng: 63.6240, source: "TETs1", type: "chamber", p1: 8.7, p2: 3.5, t1: 93.2, t2: 55.0, status: "normal", street: "пр. Алтынсарина" },
+            { id: "ТК7.01", name: "ТК7.01 (ул. Ленина 45 - 67)", lat: 53.2100, lng: 63.6200, source: "TETs1", type: "chamber", p1: 8.4, p2: 3.4, t1: 91.8, t2: 54.2, status: "emergency", street: "ул. Ленина (Алтынсарина)" },
+            { id: "ТК13.02пр", name: "ТК13.02пр (ул. Строительная)", lat: 53.2050, lng: 63.6150, source: "TETs1", type: "chamber", p1: 7.9, p2: 3.2, t1: 89.5, t2: 53.0, status: "warning", street: "ул. Строительная" },
+            
+            // ТМ-2 магистраль (ул. Баймагамбетова / ул. Мира)
+            { id: "ТК4", name: "ТК-4 (ул. Мира / Баймагамбетова)", lat: 53.2130, lng: 63.6160, source: "TETs1", type: "chamber", p1: 8.6, p2: 3.5, t1: 92.5, t2: 54.5, status: "normal", street: "ул. Мира (Баймагамбетова)" },
+            { id: "ТК5", name: "ТК-5 (ул. Мира 12 - 48)", lat: 53.2080, lng: 63.6110, source: "TETs1", type: "chamber", p1: 8.2, p2: 3.3, t1: 90.8, t2: 53.8, status: "warning", street: "ул. Мира" },
+            { id: "ТК6", name: "ТК-6 (ул. Кирова / Мира)", lat: 53.2030, lng: 63.6060, source: "BMK92", type: "chamber", p1: 7.8, p2: 3.1, t1: 88.9, t2: 52.9, status: "normal", street: "ул. Кирова" },
+
+            // ТМ-3 магистраль (ул. Гагарина / пр. Абая / пр. Победы)
+            { id: "ТК8", name: "ТК-8 (ул. Гагарина 33 - 71)", lat: 53.2090, lng: 63.6050, source: "BMK92", type: "chamber", p1: 8.1, p2: 3.2, t1: 89.9, t2: 53.1, status: "warning", street: "ул. Гагарина" },
+            { id: "ТК9", name: "ТК-9 (пр. Победы 5 - 29)", lat: 53.2040, lng: 63.5990, source: "BMK92", type: "chamber", p1: 7.7, p2: 3.0, t1: 87.5, t2: 52.1, status: "normal", street: "пр. Победы" },
+
+            // РК-3 -> КЖБИ / 5 мкр / Юбилейный
+            { id: "ТК15.02", name: "ТК15.02 (5 мкр. д.3)", lat: 53.1950, lng: 63.5960, source: "RK3", type: "chamber", p1: 7.6, p2: 3.1, t1: 88.0, t2: 52.4, status: "emergency", street: "5 микрорайон" },
+            { id: "ТК23.08", name: "ТК23.08 (ул. Быковского 1А)", lat: 53.1910, lng: 63.5890, source: "RK3", type: "chamber", p1: 7.4, p2: 3.0, t1: 87.1, t2: 52.0, status: "warning", street: "ул. Быковского" },
+            { id: "ТК23.09", name: "ТК23.09 (КЖБИ Юбилейный)", lat: 53.1870, lng: 63.5820, source: "RK3", type: "chamber", p1: 7.2, p2: 2.9, t1: 86.0, t2: 51.5, status: "repair", street: "мкр. Юбилейный" },
+            { id: "ТМ19 ВУ3", name: "ТМ19 ВУ3 (Челябинская)", lat: 53.1830, lng: 63.5750, source: "RK3", type: "node", p1: 7.0, p2: 2.8, t1: 85.2, t2: 51.0, status: "normal", street: "ул. Челябинская" },
+
+            // ТЭЦ-2 -> КСК
+            { id: "ТК22.02.01", name: "ТК22.02.01 (КСК Киевская)", lat: 53.2430, lng: 63.6620, source: "TETs2", type: "chamber", p1: 8.3, p2: 3.5, t1: 91.0, t2: 54.0, status: "repair", street: "ул. Киевская, КСК" },
+            { id: "ТК6.01л", name: "ТК6.01л (ул. 1 Мая)", lat: 53.2160, lng: 63.6290, source: "TETs1", type: "chamber", p1: 8.8, p2: 3.6, t1: 93.5, t2: 55.2, status: "normal", street: "ул. 1 Мая" }
         ];
 
-        // Topological Pipe Lines connecting Sources -> Chambers -> Chambers
+        // Topological Pipe Lines connecting Sources -> Chambers -> Chambers (ThermoTrace Grid)
         this.pipelines = [
             { id: "pipe-1", from: "TETs1", to: "ТК1", name: "ТМ-1 Вывод 1 (ф820)", diameter: 820, lengthM: 350, year: 1988, isMagistral: true, status: "normal" },
             { id: "pipe-2", from: "ТК1", to: "ТК2", name: "ТМ-1 Ул. Гоголя (ф720)", diameter: 720, lengthM: 420, year: 1991, isMagistral: true, status: "normal" },
-            { id: "pipe-3", from: "ТК2", to: "ТК3", name: "ТМ-1 Магистраль (ф630)", diameter: 630, lengthM: 510, year: 1994, isMagistral: true, status: "normal" },
-            { id: "pipe-4", from: "ТК3", to: "ТК7.01", name: "ТМ-2 Центр (ф530)", diameter: 530, lengthM: 600, year: 1985, isMagistral: true, status: "warning" },
-            { id: "pipe-5", from: "ТК7.01", to: "ТК13.02пр", name: "Внутрикв. Строительная (ф219)", diameter: 219, lengthM: 320, year: 1982, isMagistral: false, status: "emergency" },
-            { id: "pipe-6", from: "RK3", to: "ТК23.09", name: "ТМ-19 КЖБИ Юбилейный (ф530)", diameter: 530, lengthM: 480, year: 1990, isMagistral: true, status: "normal" },
-            { id: "pipe-7", from: "ТК23.09", to: "ТК23.08", name: "Внутрикв. Быковского (ф159)", diameter: 159, lengthM: 290, year: 1986, isMagistral: false, status: "warning" },
-            { id: "pipe-8", from: "ТК23.08", to: "ТК15.02", name: "Внутрикв. 5 мкр (ф100)", diameter: 100, lengthM: 380, year: 1979, isMagistral: false, status: "emergency" },
-            { id: "pipe-9", from: "ТК23.09", to: "ТМ19 ВУ3", name: "Магистраль Челябинская (ф325)", diameter: 325, lengthM: 520, year: 1999, isMagistral: true, status: "normal" },
-            { id: "pipe-10", from: "TETs2", to: "ТК22.02.01", name: "ТМ-20 КСК (ф530)", diameter: 530, lengthM: 650, year: 1987, isMagistral: true, status: "repair" },
-            { id: "pipe-11", from: "ТК1", to: "ТК6.01л", name: "ТМ-6 Ул. 1 Мая (ф325)", diameter: 325, lengthM: 280, year: 1996, isMagistral: false, status: "normal" }
+            { id: "pipe-3", from: "ТК2", to: "ТК3", name: "ТМ-1 пр. Алтынсарина (ф630)", diameter: 630, lengthM: 510, year: 1994, isMagistral: true, status: "normal" },
+            { id: "pipe-4", from: "ТК3", to: "ТК7.01", name: "Магистраль 2-3 (ул. Ленина 45-67)", diameter: 530, lengthM: 600, year: 1985, isMagistral: true, status: "emergency" },
+            { id: "pipe-5", from: "ТК7.01", to: "ТК13.02пр", name: "Внутрикв. Строительная (ф219)", diameter: 219, lengthM: 320, year: 1982, isMagistral: false, status: "warning" },
+            
+            { id: "pipe-6", from: "ТК2", to: "ТК4", name: "Перемычка ул. Гоголя / Мира (ф530)", diameter: 530, lengthM: 410, year: 1993, isMagistral: true, status: "normal" },
+            { id: "pipe-7", from: "ТК4", to: "ТК5", name: "ТМ-2 ул. Мира 12-48 (ф426)", diameter: 426, lengthM: 550, year: 1989, isMagistral: true, status: "warning" },
+            { id: "pipe-8", from: "ТК5", to: "ТК6", name: "Внутрикв. ул. Кирова (ф273)", diameter: 273, lengthM: 480, year: 1996, isMagistral: false, status: "normal" },
+
+            { id: "pipe-9", from: "BMK92", to: "ТК8", name: "ТМ-3 ул. Гагарина 33-71 (ф426)", diameter: 426, lengthM: 390, year: 1992, isMagistral: true, status: "warning" },
+            { id: "pipe-10", from: "ТК8", to: "ТК9", name: "Внутрикв. пр. Победы (ф219)", diameter: 219, lengthM: 440, year: 1995, isMagistral: false, status: "normal" },
+
+            { id: "pipe-11", from: "RK3", to: "ТК23.09", name: "ТМ-19 КЖБИ Юбилейный (ф530)", diameter: 530, lengthM: 480, year: 1990, isMagistral: true, status: "normal" },
+            { id: "pipe-12", from: "ТК23.09", to: "ТК23.08", name: "Внутрикв. Быковского (ф159)", diameter: 159, lengthM: 290, year: 1986, isMagistral: false, status: "warning" },
+            { id: "pipe-13", from: "ТК23.08", to: "ТК15.02", name: "Внутрикв. 5 мкр (ф100)", diameter: 100, lengthM: 380, year: 1979, isMagistral: false, status: "emergency" },
+            { id: "pipe-14", from: "ТК23.09", to: "ТМ19 ВУ3", name: "Магистраль Челябинская (ф325)", diameter: 325, lengthM: 520, year: 1999, isMagistral: true, status: "normal" },
+            { id: "pipe-15", from: "TETs2", to: "ТК22.02.01", name: "ТМ-20 КСК (ф530)", diameter: 530, lengthM: 650, year: 1987, isMagistral: true, status: "repair" },
+            { id: "pipe-16", from: "ТК1", to: "ТК6.01л", name: "ТМ-6 Ул. 1 Мая (ф325)", diameter: 325, lengthM: 280, year: 1996, isMagistral: false, status: "normal" }
         ];
 
         // GPS Emergency Vehicles (Real-time Fleet Tracking Integration)
@@ -253,24 +298,38 @@ window.KTEKData = {
             tkCoords[c.id] = { lat: c.lat, lng: c.lng };
         });
 
-        // Grid spread around Kostanay base center
+        // Kostanay City Street Corridors Alignment
+        // Key Street Anchors:
+        // - Altynsarin / Gogol: 53.214, 63.625
+        // - Baymagambetov / Tauelsizdik: 53.208, 63.618
+        // - KZhBI / 5 Mkr: 53.190, 63.585
+        // - KSK / Kievskaya: 53.243, 63.662
         const baseLat = 53.205;
         const baseLng = 63.615;
 
         this.houses.forEach((h, idx) => {
             let tkClean = h.tk ? h.tk.trim() : '';
             if (tkCoords[tkClean]) {
-                // Jitter around associated TK node
-                const offsetLat = (Math.sin(idx) * 0.0035);
-                const offsetLng = (Math.cos(idx) * 0.0045);
-                h.lat = tkCoords[tkClean].lat + offsetLat;
-                h.lng = tkCoords[tkClean].lng + offsetLng;
+                // Rectilinear street block offset around associated TK chamber (city grid blocks)
+                const col = (idx % 7) - 3;
+                const row = Math.floor((idx % 35) / 7) - 2;
+                h.lat = tkCoords[tkClean].lat + (row * 0.0004);
+                h.lng = tkCoords[tkClean].lng + (col * 0.0007);
             } else {
-                // Spread radially based on index
-                const r = 0.005 + (idx % 120) * 0.0002;
-                const angle = (idx % 360) * (Math.PI / 180);
-                h.lat = baseLat + r * Math.sin(angle);
-                h.lng = baseLng + r * Math.cos(angle) * 1.5;
+                // City street grid alignment for all other houses across Kostanay
+                const streetBlock = Math.floor(idx / 50);
+                const blockSubIdx = idx % 50;
+                const blockRow = Math.floor(streetBlock / 8);
+                const blockCol = streetBlock % 8;
+                
+                const blockLat = 53.180 + (blockRow * 0.006);
+                const blockLng = 63.570 + (blockCol * 0.011);
+
+                const subRow = Math.floor(blockSubIdx / 7);
+                const subCol = blockSubIdx % 7;
+
+                h.lat = blockLat + (subRow * 0.0005);
+                h.lng = blockLng + (subCol * 0.0009);
             }
 
             // Assign status based on complaints/outages

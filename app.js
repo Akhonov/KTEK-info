@@ -20,17 +20,6 @@ window.KTEKApp = {
     selectedIncident: null,
     vehicleAnimationTimer: null,
 
-    getMapMarkerSvg(type) {
-        const icons = {
-            tets: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 22V12l8-8 8 8v10H4zm2-2h12V13l-6-6-6 6v7zm3-5h2v5H9v-5zm4 0h2v5h-2v-5zm-4-3h6v2H9v-2z" fill="currentColor"/></svg>',
-            rk: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-            bmk: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M17 8C8 10 5.9 16.2 5 20l1.5.5c.5-1.9 2.5-6.3 9.5-7.5L14 17h7l-4-9z" fill="currentColor"/></svg>',
-            vehicle: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 13h12l2-4h4a1 1 0 0 1 1 1v4h-1a2 2 0 1 1-4 0H9a2 2 0 1 1-4 0H3v-1zm2-7h8l2 3H5V6zm3 10a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z" fill="currentColor"/></svg>',
-            chamber: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9zm2 0v9h12v-9H6zm2 2h8v2H8v-2zm0 4h5v2H8v-2z" fill="currentColor"/></svg>'
-        };
-        return icons[type] || icons.chamber;
-    },
-
     async init() {
         console.log("🚀 [KTEK App] Starting KTEK SCADA Digital Twin 2.0...");
         
@@ -65,17 +54,16 @@ window.KTEKApp = {
         const mapContainer = document.getElementById('map');
         if (!mapContainer) return;
 
-        // Centered around Kostanay city center using more stable city coordinates
+        // Centered around Kostanay city center
         this.map = L.map('map', {
-            center: [53.2164, 63.6188],
+            center: [53.205, 63.615],
             zoom: 13,
-            zoomControl: true,
-            preferCanvas: true
+            zoomControl: true
         });
 
-        // CartoDB Voyager Tile Layer (Ultra-clean Light Apple Maps style)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; ГКП «КТЭК» SCADA Digital Twin | Apple Maps Light Style',
+        // CartoDB Dark Matter Tile Layer (ThermoTrace Dark Style matching Image 2)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; ГКП «КТЭК» SCADA Digital Twin | ThermoTrace Dark GIS',
             maxZoom: 19
         }).addTo(this.map);
 
@@ -85,7 +73,7 @@ window.KTEKApp = {
         this.layers.chambers = L.layerGroup().addTo(this.map);
         this.layers.houses = L.layerGroup().addTo(this.map);
         this.layers.vehicles = L.layerGroup().addTo(this.map);
-        this.layers.utilities = L.layerGroup(); // hidden by default, toggleable
+        this.layers.utilities = L.layerGroup(); // hidden by default
         this.layers.outageHighlight = L.layerGroup().addTo(this.map);
     },
 
@@ -152,7 +140,13 @@ window.KTEKApp = {
 
         // 2. Render Heat Sources (ТЭЦ / БМК)
         data.sources.forEach(src => {
-            const svgHtml = this.getMapMarkerSvg(src.type) || this.getMapMarkerSvg('rk');
+            // SVG icons per type — NO FontAwesome (renders as shuriken in divIcon!)
+            const svgByType = {
+                tets: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 22V12l8-8 8 8v10H4zm2-2h12V13l-6-6-6 6v7zm3-5h2v5H9v-5zm4 0h2v5h-2v-5zm-4-3h6v2H9v-2z"/></svg>`,
+                rk:   `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
+                bmk:  `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 8C8 10 5.9 16.2 5 20l1.5.5c.5-1.9 2.5-6.3 9.5-7.5L14 17h7l-4-9z"/></svg>`
+            };
+            const svgHtml = svgByType[src.type] || svgByType.rk;
             const shortId = src.id.replace('BMK','').replace('TETs','T-').replace('RK','RK');
 
             const icon = L.divIcon({
@@ -258,10 +252,14 @@ window.KTEKApp = {
         });
 
         // 5. Render Emergency Vehicle Fleet
+        // SVG ONLY inside divIcon — FontAwesome renders as shuriken in Leaflet divIcon!
+        const truckSVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="white" width="16" height="16">
+            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+        </svg>`;
         data.vehicles.forEach(v => {
             const icon = L.divIcon({
                 className: 'custom-vehicle-icon',
-                html: `<div class="vehicle-pin">${this.getMapMarkerSvg('vehicle')}</div>`,
+                html: `<div class="vehicle-pin">${truckSVG}</div>`,
                 iconSize: [28, 28]
             });
             const marker = L.marker([v.lat, v.lng], { icon: icon });
@@ -608,16 +606,42 @@ window.KTEKApp = {
     },
 
     setupEventListeners() {
-        // Tab routing
-        document.querySelectorAll('.nav-tab').forEach(btn => {
+        // ThermoTrace Sidebar Tab Routing
+        document.querySelectorAll('.tt-nav-item[data-tab]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const target = e.currentTarget.dataset.tab;
                 this.switchTab(target);
             });
         });
 
-        // Search input
-        const searchInput = document.getElementById('globalSearch');
+        // Sidebar Toggle Collapse
+        const toggleBtn = document.getElementById('btnToggleSidebar');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                document.querySelector('.tt-sidebar')?.classList.toggle('collapsed');
+            });
+        }
+
+        // Drawer Close Button
+        const closeDrawerBtn = document.getElementById('btnCloseAnomalyDrawer');
+        if (closeDrawerBtn) {
+            closeDrawerBtn.addEventListener('click', () => {
+                document.getElementById('anomalyDrawer')?.classList.remove('active');
+            });
+        }
+
+        // Anomaly Table Sort Dropdown
+        const sortSelect = document.getElementById('anomalySortSelect');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                if (window.KTEKScada && window.KTEKScada.renderAnomaliesTable) {
+                    window.KTEKScada.renderAnomaliesTable(e.target.value);
+                }
+            });
+        }
+
+        // ThermoTrace Search Input
+        const searchInput = document.getElementById('ttGlobalSearch');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 this.handleGlobalSearch(e.target.value);
@@ -628,24 +652,15 @@ window.KTEKApp = {
         window.addEventListener('ktek-flow-updated', (e) => {
             const summary = e.detail;
             this.renderAllLayers();
-            
-            const closedChambersEl = document.getElementById('closedChambersCount');
-            if (closedChambersEl) closedChambersEl.innerText = summary.closedChambersCount;
-
-            const totalDefectsEl = document.getElementById('totalDefectsCount');
-            if (totalDefectsEl) totalDefectsEl.innerText = summary.disconnectedHousesCount;
-
-            const totalLostHeatEl = document.getElementById('totalLostHeatCount');
-            if (totalLostHeatEl) totalLostHeatEl.innerText = summary.lostGcalH.toFixed(3);
         });
     },
 
     switchTab(tabName) {
         this.activeTab = tabName;
-        document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tt-nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tt-tab-panel').forEach(p => p.classList.remove('active'));
 
-        const activeBtn = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
+        const activeBtn = document.querySelector(`.tt-nav-item[data-tab="${tabName}"]`);
         const activePanel = document.getElementById(`tab-${tabName}`);
 
         if (activeBtn) activeBtn.classList.add('active');
@@ -654,15 +669,25 @@ window.KTEKApp = {
         if (tabName === "map" && this.map) {
             setTimeout(() => this.map.invalidateSize(), 200);
         } else if (tabName === "mnemo") {
-            this.renderMnemoschemaTab();
+            this.renderFuxaMnemoschema();
+        } else if (tabName === "lablink") {
+            this.renderLablinkModel();
         } else if (tabName === "passports") {
             this.renderPassportsTab();
-        } else if (tabName === "analytics") {
+        } else if (tabName === "anomalies") {
             this.renderAnalyticsTab();
         } else if (tabName === "equipment") {
             this.renderEquipmentTab();
-        } else if (tabName === "predictive") {
-            this.renderPredictiveAnalyticsView();
+        }
+    },
+
+    highlightAnomalyPipe(pipeId, chamberId) {
+        const data = window.KTEKData;
+        if (!data || !this.map) return;
+
+        const chamber = data.chambers.find(c => c.id === chamberId);
+        if (chamber) {
+            this.map.flyTo([chamber.lat, chamber.lng], 15, { animate: true, duration: 1.2 });
         }
     },
 
@@ -673,10 +698,16 @@ window.KTEKApp = {
      * Bottom: 24h timeline with anomaly markers.
      */
     renderMnemoschemaTab() {
+        // Делегируем рендер в SCADA модуль (THERMOTRACE-стиль)
+        if (window.KTEKScada && window.KTEKScada.renderMnemoschema) {
+            window.KTEKScada.renderMnemoschema();
+            return;
+        }
         const container = document.getElementById('mnemoschemaContent');
         if (!container) return;
 
-        // Live clock updater
+        // Fallback: Live clock updater
+
         const now = new Date();
         const timeStr = now.toTimeString().slice(0,8);
         const dateStr = now.toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric' });
@@ -1263,15 +1294,6 @@ window.KTEKApp = {
                         <span>${inv.pumps.total} шт.</span>
                     </div>
                 </div>
-                <div class="equipment-kpi-card">
-                    <div class="equipment-kpi-icon purple"><i class="fa fa-truck"></i></div>
-                    <div class="equipment-kpi-info">
-                        <h4>Спецтехники ГКП</h4>
-                        <span>${inv.vehicles.length} ед.</span>
-                    </div>
-                </div>
-            </div>
-
             <h3 style="margin-bottom:12px;">Парк Спецтехники и Аварийных Бригад:</h3>
             <table class="data-table">
                 <thead>
@@ -1361,6 +1383,126 @@ window.KTEKApp = {
             this.map.flyTo([matchHouse.lat, matchHouse.lng], 17);
             this.openHousePassportDrawer(matchHouse.id);
         }
+    },
+
+    /**
+     * FUXA SCADA HMI Process Graphic Builder & Editor (frangoteam/FUXA inspired)
+     */
+    renderFuxaMnemoschema() {
+        const container = document.getElementById('mnemoschemaContent');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="fuxa-workspace" style="background:#090d16; padding:16px; border-radius:8px; color:#f8fafc; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:12px; margin-bottom:16px;">
+                    <div>
+                        <h2 style="font-size:16px; font-weight:700; color:#38bdf8; margin:0;"><i class="fa-solid fa-diagram-project"></i> FUXA SCADA HMI Process Editor & Live Mnemoschema</h2>
+                        <p style="margin:4px 0 0 0; color:#64748b;">Промышленная граф-система технологического процесса ТЭЦ-1 и ТМ Костанай (FUXA SCADA Web HMI)</p>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary btn-sm" onclick="window.KTEKApp.showNotification('Режим редактирования тегов включен', 'success')"><i class="fa-solid fa-pen-ruler"></i> Редактировать HMI</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.KTEKApp.showNotification('Все теги синхронизированы в АВТО', 'info')"><i class="fa-solid fa-robot"></i> АВТО Режим</button>
+                    </div>
+                </div>
+
+                <!-- SVG PROCESS SCHEMATIC -->
+                <div class="fuxa-canvas" style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:20px; position:relative; min-height:400px;">
+                    <svg width="100%" height="380" viewBox="0 0 900 380" style="background:transparent;">
+                        <defs>
+                            <linearGradient id="pipeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ef4444" />
+                                <stop offset="100%" stop-color="#f97316" />
+                            </linearGradient>
+                            <linearGradient id="returnGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#0284c7" />
+                                <stop offset="100%" stop-color="#38bdf8" />
+                            </linearGradient>
+                        </defs>
+
+                        <!-- TETs-1 Boiler 1 -->
+                        <rect x="40" y="60" width="140" height="180" rx="10" fill="#1e293b" stroke="#ef4444" stroke-width="2" />
+                        <text x="110" y="90" text-anchor="middle" fill="#ef4444" font-weight="bold" font-size="14">🔥 Котел №1</text>
+                        <text x="110" y="120" text-anchor="middle" fill="#cbd5e1" font-size="12">ТЭЦ-1 Щорса</text>
+                        <text x="110" y="150" text-anchor="middle" fill="#38bdf8" font-weight="bold" font-size="14">T1 = 95.4 °C</text>
+                        <text x="110" y="180" text-anchor="middle" fill="#10b981" font-size="12">P1 = 9.2 бар</text>
+                        <text x="110" y="210" text-anchor="middle" fill="#f59e0b" font-size="12">G = 3450 т/ч</text>
+
+                        <!-- Main Supply Line -->
+                        <path d="M 180 110 L 320 110 L 320 180 L 520 180 L 520 110 L 680 110" fill="none" stroke="url(#pipeGrad)" stroke-width="6" />
+                        
+                        <!-- Main Return Line -->
+                        <path d="M 680 250 L 520 250 L 520 200 L 320 200 L 320 250 L 180 250" fill="none" stroke="url(#returnGrad)" stroke-width="6" />
+
+                        <!-- Heat Exchanger Unit -->
+                        <circle cx="320" cy="190" r="35" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+                        <text x="320" y="195" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="bold">ТО-1</text>
+
+                        <!-- Circulating Pump 1 -->
+                        <circle cx="520" cy="190" r="30" fill="#1e293b" stroke="#10b981" stroke-width="3" />
+                        <text x="520" y="195" text-anchor="middle" fill="#10b981" font-size="10" font-weight="bold">ЦН-1 🌀</text>
+
+                        <!-- Thermal Chamber TK-7.01 -->
+                        <rect x="680" y="80" width="180" height="200" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="2" />
+                        <text x="770" y="110" text-anchor="middle" fill="#f59e0b" font-weight="bold" font-size="13">📦 ТК7.01 (Ленина 45)</text>
+                        <text x="770" y="140" text-anchor="middle" fill="#ef4444" font-size="12">⚠️ Дисбаланс 18.5 Гкал</text>
+                        <text x="770" y="170" text-anchor="middle" fill="#cbd5e1" font-size="11">Вход P1: 8.4 бар</text>
+                        <text x="770" y="200" text-anchor="middle" fill="#cbd5e1" font-size="11">Задвижка 1: ОТКРЫТА</text>
+                        <text x="770" y="230" text-anchor="middle" fill="#cbd5e1" font-size="11">Задвижка 2: ОТКРЫТА</text>
+                    </svg>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Lablink Co-Simulation Energy Network Solver (AIT-IES/detb-lablink-example inspired)
+     */
+    renderLablinkModel() {
+        const container = document.getElementById('lablinkContent');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="lablink-workspace" style="background:#090d16; padding:16px; border-radius:8px; color:#f8fafc; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:12px; margin-bottom:16px;">
+                    <div>
+                        <h2 style="font-size:16px; font-weight:700; color:#10b981; margin:0;"><i class="fa-solid fa-network-wired"></i> Lablink Co-Simulation Engine & Energy Grid Hydraulic Model</h2>
+                        <p style="margin:4px 0 0 0; color:#64748b;">Моделирование совместных гидротермических режимов теплосети Костаная (Lablink Framework)</p>
+                    </div>
+                    <button class="btn btn-success btn-sm" onclick="window.KTEKApp.showNotification('Со-моделирование Lablink успешно выполнено! Сходимость 0.001', 'success')">
+                        <i class="fa-solid fa-play"></i> Запустить расчет Lablink
+                    </button>
+                </div>
+
+                <div class="admin-grid">
+                    <div class="admin-card">
+                        <h3><i class="fa-solid fa-calculator"></i> Гидравлический расчет узлов (Lablink Matrix)</h3>
+                        <table class="tt-table">
+                            <thead>
+                                <tr><th>Узел Node</th><th>Расход т/ч</th><th>ΔP Потери, бар</th><th>Температура °C</th><th>Сходимость</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Node-1 (ТЭЦ-1)</td><td>3450.0</td><td>0.12</td><td>95.4</td><td><span class="tt-tag ok">OK</span></td></tr>
+                                <tr><td>Node-2 (ТК-1)</td><td>3120.5</td><td>0.35</td><td>94.8</td><td><span class="tt-tag ok">OK</span></td></tr>
+                                <tr><td>Node-3 (ТК-7.01)</td><td>2450.0</td><td>1.42</td><td>91.8</td><td><span class="tt-tag danger">АНОМАЛИЯ</span></td></tr>
+                                <tr><td>Node-4 (РК-3)</td><td>1850.0</td><td>0.28</td><td>90.5</td><td><span class="tt-tag ok">OK</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="admin-card">
+                        <h3><i class="fa-solid fa-terminal"></i> Терминал со-моделирования Lablink</h3>
+                        <div style="background:#0f172a; padding:12px; border-radius:6px; font-family:monospace; font-size:11px; color:#10b981; height:180px; overflow-y:auto;">
+                            <div>[Lablink Core] Initializing co-simulation environment...</div>
+                            <div>[Lablink Core] Connecting heat flow solver & dynamic hydraulic model...</div>
+                            <div>[Network Solver] Building nodal admittance matrix for 16 pipelines...</div>
+                            <div>[Network Solver] Iteration 1: max_residual = 0.042 bar</div>
+                            <div>[Network Solver] Iteration 2: max_residual = 0.003 bar</div>
+                            <div>[Network Solver] Converged in 3 iterations. Heat balance loss = 18.5 Gcal/h at TK7.01</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     },
 
     showNotification(text, type = "info") {
