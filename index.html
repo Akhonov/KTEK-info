@@ -227,14 +227,31 @@
                 if (data.pipelines && data.pipelines.length > 0) {
                     console.log(`Drawing ${data.pipelines.length} pipelines...`);
                     
+                    let pipelineCount = 0;
                     data.pipelines.forEach((pipe, idx) => {
                         try {
-                            if (pipe.waypoints && pipe.waypoints.length > 1) {
-                                // Parse waypoints
-                                const latlngs = pipe.waypoints.map(wp => {
-                                    const [lat, lng] = wp.split(' ').map(Number);
-                                    return [lat, lng];
+                            let latlngs = [];
+                            
+                            // Try to parse coordinates - support multiple formats
+                            if (pipe.coordinates && Array.isArray(pipe.coordinates) && pipe.coordinates.length > 1) {
+                                // Format: [[lat, lng], [lat, lng], ...]
+                                if (Array.isArray(pipe.coordinates[0])) {
+                                    latlngs = pipe.coordinates;
+                                }
+                            } else if (pipe.waypoints && pipe.waypoints.length > 1) {
+                                // Format: ["lat lng", "lat lng", ...]
+                                latlngs = pipe.waypoints.map(wp => {
+                                    if (typeof wp === 'string') {
+                                        const [lat, lng] = wp.split(' ').map(Number);
+                                        return [lat, lng];
+                                    }
+                                    return wp;
                                 });
+                            }
+                            
+                            // Only draw if we have valid coordinates
+                            if (latlngs.length > 1) {
+                                pipelineCount++;
 
                                 // Determine color and style
                                 const color = getStatusColor(pipe.status);
@@ -256,26 +273,35 @@
                                 polyline.bindPopup(`
                                     <div style="font-size: 11px; min-width: 180px;">
                                         <strong>${pipe.name}</strong><br/>
-                                        Диаметр: ф${pipe.diameter} мм<br/>
-                                        Длина: ${pipe.lengthM} м<br/>
-                                        Год: ${pipe.year}<br/>
+                                        Диаметр: ф${pipe.diameter || '—'} мм<br/>
+                                        Длина: ${pipe.lengthM || '—'} м<br/>
+                                        Год: ${pipe.year || '—'}<br/>
                                         Тип: ${pipe.isMagistral ? 'Магистраль' : 'Внутрикв.'}<br/>
                                         Статус: <span style="color: ${color}; font-weight: 600;">${pipe.status}</span>
                                     </div>
                                 `);
+                            } else {
+                                // No valid coordinates for this pipe
+                                if (idx < 5) {
+                                    console.warn(`Pipe ${idx} (${pipe.name}): no coordinates`, pipe);
+                                }
                             }
                         } catch(e) {
                             // Skip malformed pipes
+                            if (idx < 5) {
+                                console.error(`Error processing pipe ${idx}:`, e);
+                            }
                         }
                     });
                     
-                    console.log('✓ Pipelines drawn');
+                    console.log(`✓ Pipelines drawn: ${pipelineCount} of ${data.pipelines.length}`);
                 }
                 
                 // Draw chamber markers
                 if (data.chambers && data.chambers.length > 0) {
                     console.log(`Drawing ${data.chambers.length} chambers...`);
                     
+                    let markerCount = 0;
                     data.chambers.forEach((chamber, idx) => {
                         try {
                             const statusColor = getStatusColor(chamber.status);
@@ -299,20 +325,24 @@
                                             🚦 Статус: <span style="color: ${statusColor}; font-weight: 600;">${chamber.status || 'нормально'}</span>
                                         </div>
                                         <strong>Температуры:</strong><br/>
-                                        🔴 Подача: <strong>${chamber.t1}°C</strong><br/>
-                                        🔵 Обратка: <strong>${chamber.t2}°C</strong><br/>
+                                        🔴 Подача: <strong>${chamber.t1 || '—'}°C</strong><br/>
+                                        🔵 Обратка: <strong>${chamber.t2 || '—'}°C</strong><br/>
                                         <strong>Давления:</strong><br/>
-                                        🔴 Подача: <strong>${chamber.p1} бар</strong><br/>
-                                        🔵 Обратка: <strong>${chamber.p2} бар</strong>
+                                        🔴 Подача: <strong>${chamber.p1 || '—'} бар</strong><br/>
+                                        🔵 Обратка: <strong>${chamber.p2 || '—'} бар</strong>
                                     </div>
                                 `)
                                 .addTo(markersLayer);
+                            
+                            markerCount++;
                         } catch(e) {
-                            console.error('Error adding chamber marker:', chamber.id, e);
+                            if (idx < 5) {
+                                console.error(`Error adding chamber ${idx} (${chamber.id}):`, e);
+                            }
                         }
                     });
                     
-                    console.log('✓ Chambers drawn');
+                    console.log(`✓ Markers drawn: ${markerCount} of ${data.chambers.length}`);
                 }
 
                 console.log(`✅ Map loaded with all data!`);
