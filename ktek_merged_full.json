@@ -26036,7 +26036,7 @@
       "to": "LatLng(53.216543, 63.63677)"
     }
   ],
-  "info": {
+  "metadata": {
     "source": "KML geometry + current telemetry",
     "chambers_total": 434,
     "pipelines_total": 781
