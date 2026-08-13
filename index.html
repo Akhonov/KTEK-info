@@ -247,7 +247,7 @@
         fetch('ktek_built_dataset.json')
             .then(response => response.json())
             .then(data => {
-                console.log('✓ Thermal network data loaded', data);
+                addLog('✓ Data loaded: ' + data.chambers.length + ' chambers, ' + data.pipelines.length + ' pipes');
                 
                 // Helper function to get color based on status
                 const getStatusColor = (status) => {
@@ -261,9 +261,11 @@
 
                 // Draw pipelines first (so they appear under markers)
                 if (data.pipelines && data.pipelines.length > 0) {
-                    console.log(`Drawing ${data.pipelines.length} pipelines...`);
+                    addLog(`Drawing ${data.pipelines.length} pipelines...`);
                     
                     let pipelineCount = 0;
+                    let skipped = 0;
+                    
                     data.pipelines.forEach((pipe, idx) => {
                         try {
                             let latlngs = [];
@@ -317,25 +319,26 @@
                                     </div>
                                 `);
                             } else {
+                                skipped++;
                                 // No valid coordinates for this pipe
                                 if (idx < 5) {
-                                    console.warn(`Pipe ${idx} (${pipe.name}): no coordinates`, pipe);
+                                    addLog(`Pipe ${idx} (${pipe.name}): no valid coords`, 'warn');
                                 }
                             }
                         } catch(e) {
                             // Skip malformed pipes
                             if (idx < 5) {
-                                console.error(`Error processing pipe ${idx}:`, e);
+                                addLog(`Error on pipe ${idx}: ${e.message}`, 'error');
                             }
                         }
                     });
                     
-                    console.log(`✓ Pipelines drawn: ${pipelineCount} of ${data.pipelines.length}`);
+                    addLog(`✓ Pipelines drawn: ${pipelineCount} of ${data.pipelines.length} (skipped: ${skipped})`);
                 }
                 
                 // Draw chamber markers
                 if (data.chambers && data.chambers.length > 0) {
-                    console.log(`Drawing ${data.chambers.length} chambers...`);
+                    addLog(`Drawing ${data.chambers.length} chambers...`);
                     
                     let markerCount = 0;
                     data.chambers.forEach((chamber, idx) => {
@@ -373,18 +376,18 @@
                             markerCount++;
                         } catch(e) {
                             if (idx < 5) {
-                                console.error(`Error adding chamber ${idx} (${chamber.id}):`, e);
+                                addLog(`Error adding chamber ${idx} (${chamber.id}): ${e.message}`, 'error');
                             }
                         }
                     });
                     
-                    console.log(`✓ Markers drawn: ${markerCount} of ${data.chambers.length}`);
+                    addLog(`✓ Markers drawn: ${markerCount} of ${data.chambers.length}`);
                 }
 
-                console.log(`✅ Map loaded with all data!`);
+                addLog(`✅ Map loaded with all data!`);
             })
             .catch(err => {
-                console.error('❌ Error loading thermal data:', err);
+                addLog(`Error loading data: ${err.message}`, 'error');
             });
 
         console.log('✓ Map with thermal network markers loaded');
