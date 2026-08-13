@@ -65,6 +65,24 @@
             font-size: 18px;
         }
 
+        /* Marker styling */
+        .thermal-marker {
+            background: transparent !important;
+            border: none !important;
+        }
+
+        .marker-badge {
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4)) !important;
+            cursor: pointer;
+            border: 2px solid #fff;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .marker-badge:hover {
+            transform: scale(1.15);
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6)) !important;
+        }
+
         /* Apple Light Map Controls */
         .leaflet-control-zoom {
             border-radius: 12px !important;
@@ -110,6 +128,15 @@
 
         body.dark-theme .leaflet-control-zoom a:hover {
             background: #333 !important;
+        }
+
+        /* Leaflet polylines - ensure visibility */
+        .leaflet-pane-overlayPane {
+            z-index: 400;
+        }
+
+        .leaflet-pane-markerPane {
+            z-index: 600;
         }
     </style>
 </head>
@@ -184,97 +211,114 @@
         fetch('ktek_built_dataset.json')
             .then(response => response.json())
             .then(data => {
-                console.log('✓ Thermal network data loaded');
+                console.log('✓ Thermal network data loaded', data);
                 
                 // Helper function to get color based on status
                 const getStatusColor = (status) => {
                     switch(status) {
-                        case 'emergency': return '#dc2626'; // Red
-                        case 'warning': return '#f59e0b';   // Amber
-                        case 'repair': return '#8b5cf6';    // Purple
-                        default: return '#10b981';           // Green
+                        case 'emergency': return '#ef4444'; // Brighter red
+                        case 'warning': return '#f97316';   // Brighter orange
+                        case 'repair': return '#a78bfa';    // Lighter purple
+                        default: return '#4ade80';           // Brighter green
                     }
                 };
 
                 // Draw pipelines first (so they appear under markers)
-                if (data.pipelines) {
+                if (data.pipelines && data.pipelines.length > 0) {
                     console.log(`Drawing ${data.pipelines.length} pipelines...`);
                     
                     data.pipelines.forEach((pipe, idx) => {
-                        if (pipe.waypoints && pipe.waypoints.length > 0) {
-                            // Parse waypoints
-                            const latlngs = pipe.waypoints.map(wp => {
-                                const [lat, lng] = wp.split(' ').map(Number);
-                                return [lat, lng];
-                            });
+                        try {
+                            if (pipe.waypoints && pipe.waypoints.length > 1) {
+                                // Parse waypoints
+                                const latlngs = pipe.waypoints.map(wp => {
+                                    const [lat, lng] = wp.split(' ').map(Number);
+                                    return [lat, lng];
+                                });
 
-                            // Determine color and style
-                            const color = getStatusColor(pipe.status);
-                            const weight = pipe.isMagistral ? 3 : 1.5;
-                            const opacity = pipe.status === 'emergency' ? 0.9 : 0.6;
-                            const dashArray = pipe.status === 'emergency' ? '5, 5' : null;
+                                // Determine color and style
+                                const color = getStatusColor(pipe.status);
+                                const weight = pipe.isMagistral ? 4 : 2;
+                                const opacity = 0.8;
+                                const dashArray = pipe.status === 'emergency' ? '8, 4' : null;
 
-                            // Draw pipeline
-                            const polyline = L.polyline(latlngs, {
-                                color: color,
-                                weight: weight,
-                                opacity: opacity,
-                                dashArray: dashArray
-                            }).addTo(markersLayer);
+                                // Draw pipeline
+                                const polyline = L.polyline(latlngs, {
+                                    color: color,
+                                    weight: weight,
+                                    opacity: opacity,
+                                    dashArray: dashArray,
+                                    lineCap: 'round',
+                                    lineJoin: 'round'
+                                }).addTo(markersLayer);
 
-                            // Add popup
-                            polyline.bindPopup(`
-                                <div style="font-size: 11px; min-width: 180px;">
-                                    <strong>${pipe.name}</strong><br/>
-                                    Диаметр: ф${pipe.diameter} мм<br/>
-                                    Длина: ${pipe.lengthM} м<br/>
-                                    Год: ${pipe.year}<br/>
-                                    Тип: ${pipe.isMagistral ? 'Магистраль' : 'Внутрикв.'}<br/>
-                                    Статус: <span style="color: ${color}; font-weight: 600;">${pipe.status}</span>
-                                </div>
-                            `);
+                                // Add popup
+                                polyline.bindPopup(`
+                                    <div style="font-size: 11px; min-width: 180px;">
+                                        <strong>${pipe.name}</strong><br/>
+                                        Диаметр: ф${pipe.diameter} мм<br/>
+                                        Длина: ${pipe.lengthM} м<br/>
+                                        Год: ${pipe.year}<br/>
+                                        Тип: ${pipe.isMagistral ? 'Магистраль' : 'Внутрикв.'}<br/>
+                                        Статус: <span style="color: ${color}; font-weight: 600;">${pipe.status}</span>
+                                    </div>
+                                `);
+                            }
+                        } catch(e) {
+                            // Skip malformed pipes
                         }
                     });
+                    
+                    console.log('✓ Pipelines drawn');
                 }
                 
-                // Draw chamber/source markers
-                if (data.chambers) {
+                // Draw chamber markers
+                if (data.chambers && data.chambers.length > 0) {
                     console.log(`Drawing ${data.chambers.length} chambers...`);
                     
-                    data.chambers.forEach(chamber => {
-                        const statusColor = getStatusColor(chamber.status);
-                        
-                        const icon = L.divIcon({
-                            className: 'thermal-marker',
-                            html: `<div class="marker-badge" style="background: ${statusColor}; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${chamber.id}</div>`,
-                            iconSize: [Math.max(60, chamber.id.length * 7), 24],
-                            iconAnchor: [Math.max(30, chamber.id.length * 3.5), 12],
-                            popupAnchor: [0, -12]
-                        });
+                    data.chambers.forEach((chamber, idx) => {
+                        try {
+                            const statusColor = getStatusColor(chamber.status);
+                            const labelSize = Math.max(70, chamber.id.length * 8);
+                            
+                            const icon = L.divIcon({
+                                className: 'thermal-marker',
+                                html: `<div class="marker-badge" style="background: ${statusColor}; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; white-space: nowrap; box-shadow: 0 3px 8px rgba(0,0,0,0.4); border: 2px solid #fff;">${chamber.id}</div>`,
+                                iconSize: [labelSize, 32],
+                                iconAnchor: [labelSize/2, 16],
+                                popupAnchor: [0, -16]
+                            });
 
-                        const marker = L.marker([chamber.lat, chamber.lng], { icon: icon })
-                            .bindPopup(`
-                                <div style="font-size: 12px; min-width: 220px;">
-                                    <strong style="font-size: 13px; color: ${statusColor};">${chamber.name}</strong><br/>
-                                    Координаты: ${chamber.lat.toFixed(5)}, ${chamber.lng.toFixed(5)}<br/>
-                                    Источник: ${chamber.source || '—'}<br/>
-                                    Статус: <span style="color: ${statusColor}; font-weight: 600;">${chamber.status || 'нормально'}</span><br/>
-                                    <hr style="margin: 4px 0; border: none; border-top: 1px solid #ddd;"/>
-                                    T подача: <strong>${chamber.t1}°C</strong><br/>
-                                    T обратка: <strong>${chamber.t2}°C</strong><br/>
-                                    P подача: <strong>${chamber.p1} бар</strong><br/>
-                                    P обратка: <strong>${chamber.p2} бар</strong>
-                                </div>
-                            `)
-                            .addTo(markersLayer);
+                            const marker = L.marker([chamber.lat, chamber.lng], { icon: icon })
+                                .bindPopup(`
+                                    <div style="font-size: 12px; min-width: 240px; padding: 8px;">
+                                        <strong style="font-size: 14px; color: ${statusColor}; display: block; margin-bottom: 6px;">${chamber.name}</strong>
+                                        <div style="background: #f0f0f0; padding: 6px; border-radius: 4px; margin-bottom: 6px; font-size: 11px;">
+                                            📍 Координаты: ${chamber.lat.toFixed(5)}, ${chamber.lng.toFixed(5)}<br/>
+                                            🔗 Источник: ${chamber.source || '—'}<br/>
+                                            🚦 Статус: <span style="color: ${statusColor}; font-weight: 600;">${chamber.status || 'нормально'}</span>
+                                        </div>
+                                        <strong>Температуры:</strong><br/>
+                                        🔴 Подача: <strong>${chamber.t1}°C</strong><br/>
+                                        🔵 Обратка: <strong>${chamber.t2}°C</strong><br/>
+                                        <strong>Давления:</strong><br/>
+                                        🔴 Подача: <strong>${chamber.p1} бар</strong><br/>
+                                        🔵 Обратка: <strong>${chamber.p2} бар</strong>
+                                    </div>
+                                `)
+                                .addTo(markersLayer);
+                        } catch(e) {
+                            console.error('Error adding chamber marker:', chamber.id, e);
+                        }
                     });
+                    
+                    console.log('✓ Chambers drawn');
                 }
 
-                console.log(`✓ Map loaded with pipelines and markers`);
+                console.log(`✅ Map loaded with all data!`);
             })
             .catch(err => {
-                console.error('Error loading thermal data:', err);
-                console.log('Continuing without markers...');
+                console.error('❌ Error loading thermal data:', err);
             });
 
         console.log('✓ Map with thermal network markers loaded');
