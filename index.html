@@ -160,6 +160,135 @@
         body.dark .source-edit-panel h2 { color: #fff; }
         body.dark .source-edit-panel p { color: #b7c1c6; }
 
+        .twin-control { position: relative; }
+
+        .twin-toggle {
+            position: relative;
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(28, 39, 49, .12);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .96);
+            color: #172229;
+            box-shadow: 0 3px 14px rgba(27, 39, 51, .18);
+            cursor: pointer;
+            transition: transform .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease;
+        }
+
+        .twin-toggle:hover,
+        .twin-control.is-open .twin-toggle {
+            transform: translateY(-1px);
+            background: #101e2a;
+            color: #6df5ca;
+            box-shadow: 0 8px 24px rgba(13, 32, 44, .32);
+        }
+
+        .twin-toggle svg { width: 24px; height: 24px; }
+        .twin-toggle__live {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 10px;
+            height: 10px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            background: #14c98b;
+            box-shadow: 0 0 0 4px rgba(20, 201, 139, .14);
+        }
+
+        .twin-toggle.is-paused .twin-toggle__live { background: #98a4aa; box-shadow: none; }
+
+        .twin-panel {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            width: min(390px, calc(100vw - 24px));
+            overflow: hidden;
+            border: 1px solid rgba(13, 28, 38, .2);
+            border-radius: 20px;
+            background: rgba(249, 252, 252, .98);
+            box-shadow: 0 18px 50px rgba(7, 22, 31, .32);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px) scale(.97);
+            transform-origin: top right;
+            transition: opacity .18s ease, transform .18s ease, visibility .18s;
+        }
+
+        .twin-control.is-open .twin-panel { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+
+        .twin-panel__head {
+            position: relative;
+            overflow: hidden;
+            padding: 17px 18px 16px;
+            background: linear-gradient(135deg, #101e2a 0%, #163c45 55%, #126a62 100%);
+            color: #fff;
+        }
+
+        .twin-panel__head::after {
+            content: "";
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            top: -80px;
+            right: -35px;
+            border: 1px solid rgba(109, 245, 202, .27);
+            border-radius: 50%;
+            box-shadow: 0 0 0 25px rgba(109,245,202,.05), 0 0 0 50px rgba(109,245,202,.035);
+        }
+
+        .twin-panel__eyebrow { display: flex; align-items: center; gap: 7px; color: #8cf4d3; font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+        .twin-panel__eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #55efbd; box-shadow: 0 0 0 4px rgba(85,239,189,.13); }
+        .twin-panel__title { position: relative; z-index: 1; margin: 7px 0 3px; font-size: 20px; font-weight: 850; }
+        .twin-panel__updated { color: rgba(255,255,255,.65); font-size: 10px; }
+
+        .twin-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; }
+        .twin-kpi { min-height: 72px; padding: 11px 12px; border: 1px solid #e1e8e9; border-radius: 13px; background: #fff; }
+        .twin-kpi__label { color: #87959b; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+        .twin-kpi__value { display: block; margin-top: 7px; color: #17262c; font-size: 20px; font-weight: 850; font-variant-numeric: tabular-nums; }
+        .twin-kpi__unit { margin-left: 3px; color: #819096; font-size: 10px; font-weight: 700; }
+
+        .twin-section { padding: 0 12px 12px; }
+        .twin-section__label { display: block; margin: 3px 0 8px; color: #7d8b91; font-size: 9px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+        .twin-scenarios { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+        .twin-scenario { padding: 9px 7px; border: 1px solid #dce5e7; border-radius: 10px; background: #fff; color: #526168; cursor: pointer; font: inherit; font-size: 10px; font-weight: 800; }
+        .twin-scenario:hover { border-color: #54c9aa; }
+        .twin-scenario.is-active { border-color: #137b69; background: #e8faf4; color: #0d6b5b; box-shadow: inset 0 0 0 1px #137b69; }
+
+        .twin-panel__footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; border-top: 1px solid #e2e9eb; background: #f1f5f5; }
+        .twin-mode-note { color: #7b898f; font-size: 9px; line-height: 1.35; }
+        .twin-run-toggle { flex: 0 0 auto; padding: 8px 11px; border: 0; border-radius: 9px; background: #16262d; color: #fff; cursor: pointer; font: inherit; font-size: 10px; font-weight: 800; }
+
+        .telemetry-section { padding-bottom: 18px; }
+        .telemetry-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .telemetry-badge { padding: 4px 7px; border-radius: 7px; background: #e7faf4; color: #08775e; font-size: 9px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
+        .telemetry-badge.warning { background: #fff4df; color: #ad6300; }
+        .telemetry-badge.critical { background: #ffebe9; color: #c9281c; }
+        .telemetry-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .telemetry-metric { padding: 11px; border: 1px solid #dfe7e9; border-radius: 12px; background: #fff; }
+        .telemetry-metric__label { display: block; color: #8b989e; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+        .telemetry-metric__value { display: block; margin-top: 5px; color: #17262c; font-size: 19px; font-weight: 850; font-variant-numeric: tabular-nums; }
+        .telemetry-metric__unit { color: #849298; font-size: 10px; }
+        .telemetry-chart { width: 100%; height: 72px; display: block; margin-top: 9px; border-radius: 11px; background: linear-gradient(180deg, #f1fbf8, #fff); }
+        .telemetry-chart__grid { stroke: #dce9e6; stroke-width: 1; }
+        .telemetry-chart__line { fill: none; stroke: #0ba67f; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+        .telemetry-impact { margin-top: 9px; padding: 9px 10px; border-radius: 10px; background: #fff3e0; color: #a95800; font-size: 10px; font-weight: 800; line-height: 1.4; }
+        .telemetry-impact.critical { background: #ffebe9; color: #bd251a; }
+
+        .map-marker.telemetry-warning .map-marker__outer { box-shadow: 0 0 0 5px rgba(255, 167, 38, .28), 0 3px 10px rgba(0,0,0,.48); }
+        .map-marker.telemetry-critical .map-marker__outer { animation: telemetryAlarm 1.25s ease-in-out infinite; }
+        .heat-source-marker.telemetry-warning .heat-source-marker__pin { outline: 3px solid #ffad32; outline-offset: 5px; }
+        .heat-source-marker.telemetry-critical .heat-source-marker__pin { outline: 4px solid #ff3b30; outline-offset: 5px; animation: telemetryAlarm 1.25s ease-in-out infinite; }
+        @keyframes telemetryAlarm { 50% { filter: drop-shadow(0 0 9px rgba(255,59,48,.95)); } }
+
+        body.dark .twin-toggle { background: rgba(37,46,51,.95); color: #7cf4d1; border-color: #46545b; }
+        body.dark .twin-panel { background: #20292d; border-color: #46545b; }
+        body.dark .twin-kpi, body.dark .twin-scenario, body.dark .telemetry-metric { background: #293338; border-color: #3e4b51; }
+        body.dark .twin-kpi__value, body.dark .telemetry-metric__value { color: #f0f5f6; }
+        body.dark .twin-panel__footer { background: #263136; border-color: #3e4b51; }
+
         .search-toggle {
             width: 46px;
             height: 46px;
@@ -1033,6 +1162,39 @@
     <div class="dependency-summary" id="dependencySummary" aria-live="polite"></div>
 
     <div class="map-toolbar">
+        <div class="twin-control" id="twinControl">
+            <button class="twin-toggle" id="twinToggle" type="button" aria-label="Цифровой двойник" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 12h3l2.2-6 3.3 12 2.8-9 2.1 6H21"></path>
+                </svg>
+                <span class="twin-toggle__live"></span>
+            </button>
+            <section class="twin-panel" id="twinPanel" aria-label="Цифровой двойник теплосети">
+                <header class="twin-panel__head">
+                    <span class="twin-panel__eyebrow">Simulation online</span>
+                    <h2 class="twin-panel__title">Цифровой двойник</h2>
+                    <span class="twin-panel__updated" id="twinUpdated">Подготовка модели…</span>
+                </header>
+                <div class="twin-kpis">
+                    <div class="twin-kpi"><span class="twin-kpi__label">Подача</span><strong class="twin-kpi__value"><span id="twinTemperature">—</span><small class="twin-kpi__unit">°C</small></strong></div>
+                    <div class="twin-kpi"><span class="twin-kpi__label">Давление</span><strong class="twin-kpi__value"><span id="twinPressure">—</span><small class="twin-kpi__unit">бар</small></strong></div>
+                    <div class="twin-kpi"><span class="twin-kpi__label">Мощность</span><strong class="twin-kpi__value"><span id="twinPower">—</span><small class="twin-kpi__unit">МВт</small></strong></div>
+                    <div class="twin-kpi"><span class="twin-kpi__label">Отклонения</span><strong class="twin-kpi__value"><span id="twinAnomalies">—</span><small class="twin-kpi__unit">объ.</small></strong></div>
+                </div>
+                <div class="twin-section">
+                    <span class="twin-section__label">Сценарий модели</span>
+                    <div class="twin-scenarios">
+                        <button class="twin-scenario is-active" type="button" data-twin-scenario="normal">Штатно</button>
+                        <button class="twin-scenario" type="button" data-twin-scenario="leak">Утечка</button>
+                        <button class="twin-scenario" type="button" data-twin-scenario="frost">Сильный мороз</button>
+                    </div>
+                </div>
+                <footer class="twin-panel__footer">
+                    <span class="twin-mode-note">Демонстрационная модель · готово для подключения OPC UA/WebSocket</span>
+                    <button class="twin-run-toggle" id="twinRunToggle" type="button">Пауза</button>
+                </footer>
+            </section>
+        </div>
         <div class="source-editor" id="sourceEditor">
             <button class="source-edit-toggle" id="sourceEditToggle" type="button" aria-label="Переместить котельные" aria-expanded="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1132,6 +1294,23 @@
                 <span class="info-label">материалы</span>
                 <a class="source-link" id="sourceLink" href="#" target="_blank" rel="noopener noreferrer">Открыть прикреплённый материал ↗</a>
             </section>
+            <section class="info-row telemetry-section" id="telemetrySection">
+                <div class="telemetry-head">
+                    <span class="info-label" style="margin:0">цифровой двойник · live</span>
+                    <span class="telemetry-badge" id="telemetryStatus">Норма</span>
+                </div>
+                <div class="telemetry-grid">
+                    <div class="telemetry-metric"><span class="telemetry-metric__label">Подача</span><strong class="telemetry-metric__value"><span id="telemetrySupply">—</span> <small class="telemetry-metric__unit">°C</small></strong></div>
+                    <div class="telemetry-metric"><span class="telemetry-metric__label">Обратка</span><strong class="telemetry-metric__value"><span id="telemetryReturn">—</span> <small class="telemetry-metric__unit">°C</small></strong></div>
+                    <div class="telemetry-metric"><span class="telemetry-metric__label">Давление</span><strong class="telemetry-metric__value"><span id="telemetryPressure">—</span> <small class="telemetry-metric__unit">бар</small></strong></div>
+                    <div class="telemetry-metric"><span class="telemetry-metric__label">Расход</span><strong class="telemetry-metric__value"><span id="telemetryFlow">—</span> <small class="telemetry-metric__unit">т/ч</small></strong></div>
+                </div>
+                <svg class="telemetry-chart" id="telemetryChart" viewBox="0 0 320 72" preserveAspectRatio="none" aria-label="История температуры подачи">
+                    <path class="telemetry-chart__grid" d="M0 18H320M0 36H320M0 54H320"></path>
+                    <path class="telemetry-chart__line" id="telemetryChartLine" d=""></path>
+                </svg>
+                <div class="telemetry-impact" id="telemetryImpact" hidden></div>
+            </section>
             <section class="info-row">
                 <span class="info-label">дефекты из реестра</span>
                 <div class="defect-summary" id="defectSummary"></div>
@@ -1141,6 +1320,7 @@
     </aside>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="digital_twin.js?v=20260814-leak-propagation"></script>
     <script>
         const map = L.map("map", {
             center: [53.2164, 63.6188],
@@ -1193,6 +1373,10 @@
         let allHeatSources = [];
         let activeHeatSourceId = null;
         let mapObjectCounts = { points: 0, lines: 0 };
+        let digitalTwin = null;
+        let twinSnapshot = null;
+        let activeCardObjectId = null;
+        let lastTwinImpactKey = "";
         try {
             sourcePositionOverrides = JSON.parse(localStorage.getItem(SOURCE_POSITIONS_KEY) || "{}") || {};
             deletedSourceIds = new Set(JSON.parse(localStorage.getItem(DELETED_SOURCES_KEY) || "[]") || []);
@@ -1237,6 +1421,23 @@
         const sourceEditMode = document.getElementById("sourceEditMode");
         const sourceExport = document.getElementById("sourceExport");
         const sourceReset = document.getElementById("sourceReset");
+        const twinControl = document.getElementById("twinControl");
+        const twinToggle = document.getElementById("twinToggle");
+        const twinPanel = document.getElementById("twinPanel");
+        const twinUpdated = document.getElementById("twinUpdated");
+        const twinTemperature = document.getElementById("twinTemperature");
+        const twinPressure = document.getElementById("twinPressure");
+        const twinPower = document.getElementById("twinPower");
+        const twinAnomalies = document.getElementById("twinAnomalies");
+        const twinRunToggle = document.getElementById("twinRunToggle");
+        const twinScenarioButtons = [...document.querySelectorAll("[data-twin-scenario]")];
+        const telemetryStatus = document.getElementById("telemetryStatus");
+        const telemetrySupply = document.getElementById("telemetrySupply");
+        const telemetryReturn = document.getElementById("telemetryReturn");
+        const telemetryPressure = document.getElementById("telemetryPressure");
+        const telemetryFlow = document.getElementById("telemetryFlow");
+        const telemetryChartLine = document.getElementById("telemetryChartLine");
+        const telemetryImpact = document.getElementById("telemetryImpact");
 
         function safeColor(value, fallback = "#455A64") {
             return /^#[0-9a-f]{6}$/i.test(value || "") ? value : fallback;
@@ -1258,6 +1459,115 @@
         function closeSourceEditor() {
             sourceEditor.classList.remove("is-open");
             sourceEditToggle.setAttribute("aria-expanded", "false");
+        }
+
+        function closeTwinPanel() {
+            twinControl.classList.remove("is-open");
+            twinToggle.setAttribute("aria-expanded", "false");
+        }
+
+        function temperatureColor(temperature) {
+            if (temperature < 55) return "#2584d8";
+            if (temperature < 68) return "#12a594";
+            if (temperature < 80) return "#f0a21a";
+            return "#e34a33";
+        }
+
+        function telemetryChartPath(history) {
+            if (!history?.length) return "";
+            const values = history.map(item => item.supply);
+            const minimum = Math.min(...values) - 2;
+            const maximum = Math.max(...values) + 2;
+            const span = Math.max(1, maximum - minimum);
+            return values.map((value, index) => {
+                const x = values.length === 1 ? 0 : index * 320 / (values.length - 1);
+                const y = 64 - ((value - minimum) / span) * 54;
+                return `${index ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`;
+            }).join(" ");
+        }
+
+        function renderObjectTelemetry(objectId) {
+            const telemetry = twinSnapshot?.objects.get(objectId);
+            if (!telemetry) return;
+            const labels = { normal: "Норма", warning: "Внимание", critical: "Авария" };
+            telemetryStatus.textContent = labels[telemetry.status] || "Норма";
+            telemetryStatus.className = `telemetry-badge${telemetry.status === "normal" ? "" : ` ${telemetry.status}`}`;
+            telemetrySupply.textContent = telemetry.supply.toFixed(1);
+            telemetryReturn.textContent = telemetry.returnTemperature.toFixed(1);
+            telemetryPressure.textContent = telemetry.pressure.toFixed(2);
+            telemetryFlow.textContent = telemetry.flow.toFixed(1);
+            telemetryChartLine.setAttribute("d", telemetryChartPath(telemetry.history));
+            telemetryImpact.hidden = !telemetry.leakAffected;
+            if (telemetry.leakAffected) {
+                telemetryImpact.className = `telemetry-impact${telemetry.impactLevel === 0 ? " critical" : ""}`;
+                telemetryImpact.textContent = telemetry.impactLevel === 0
+                    ? "Источник утечки: максимальная потеря давления и теплоносителя"
+                    : `Ниже места утечки · уровень ${telemetry.impactLevel} · сила влияния ${telemetry.impactPercent}%`;
+            }
+        }
+
+        function applyTelemetryStyles(snapshot) {
+            selectableObjects.forEach(target => {
+                const telemetry = snapshot.objects.get(target.object.id);
+                if (!telemetry) return;
+                if (target.kind === "line") {
+                    target.baseStyle.color = telemetry.status === "critical"
+                        ? "#e32626"
+                        : temperatureColor(telemetry.supply);
+                    target.baseStyle.opacity = telemetry.status === "critical" ? 1 : 0.88;
+                    if (target !== aimedTarget) target.layer.setStyle(target.baseStyle);
+                } else {
+                    const element = target.layer.getElement();
+                    element?.classList.toggle("telemetry-warning", telemetry.status === "warning");
+                    element?.classList.toggle("telemetry-critical", telemetry.status === "critical");
+                }
+            });
+        }
+
+        function renderTwinSnapshot(snapshot) {
+            twinSnapshot = snapshot;
+            const impactKey = `${snapshot.scenario}:${snapshot.focusId || ""}`;
+            const focusName = snapshot.scenario === "leak" ? snapshot.objects.get(snapshot.focusId)?.name : "";
+            twinUpdated.textContent = focusName
+                ? `Утечка: ${focusName} · затронуто ${snapshot.aggregate.affected} объектов`
+                : `${snapshot.running ? "Обновлено" : "Модель на паузе"} · ${new Date(snapshot.timestamp).toLocaleTimeString("ru-RU")}`;
+            twinTemperature.textContent = snapshot.aggregate.averageSupply.toFixed(1);
+            twinPressure.textContent = snapshot.aggregate.averagePressure.toFixed(2);
+            twinPower.textContent = snapshot.aggregate.totalPower.toFixed(1);
+            twinAnomalies.textContent = String(snapshot.aggregate.warnings + snapshot.aggregate.critical);
+            twinToggle.classList.toggle("is-paused", !snapshot.running);
+            twinRunToggle.textContent = snapshot.running ? "Пауза" : "Запустить";
+            twinScenarioButtons.forEach(button => button.classList.toggle("is-active", button.dataset.twinScenario === snapshot.scenario));
+            applyTelemetryStyles(snapshot);
+            if (activeCardObjectId) renderObjectTelemetry(activeCardObjectId);
+            if (impactKey !== lastTwinImpactKey) {
+                lastTwinImpactKey = impactKey;
+                visibleDependencyTarget = null;
+                refreshDependentHouses();
+            }
+        }
+
+        function initializeDigitalTwin(data) {
+            digitalTwin = new window.DigitalTwinEngine({ intervalMs: 1500 });
+            const models = [
+                ...data.lines.map(object => ({
+                    id: object.id, name: object.name, type: "Участок тепловой сети",
+                    hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
+                    downstreamObjects: object.downstreamObjects || []
+                })),
+                ...data.points.map(object => ({
+                    id: object.id, name: object.name, type: "Объект тепловой сети",
+                    hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
+                    downstreamObjects: object.downstreamObjects || []
+                })),
+                ...(data.heatSources || []).filter(source => !deletedSourceIds.has(source.id)).map(object => ({
+                    id: object.id, name: object.name, type: "Теплоисточник", hasActiveDefect: false,
+                    downstreamObjects: object.downstreamObjects || []
+                }))
+            ];
+            digitalTwin.subscribe(renderTwinSnapshot);
+            digitalTwin.register(models);
+            digitalTwin.start();
         }
 
         function persistSourcePositions() {
@@ -1659,6 +1969,7 @@
             }
             selectedLayer = null;
             activeHeatSourceId = null;
+            activeCardObjectId = null;
             heatSourceDelete.hidden = true;
         }
 
@@ -1714,6 +2025,9 @@
                 ? target.object.downstreamHouseKeys
                 : (target?.object?.dependentHouseKeys || []);
             const houses = houseKeys.map(key => dependentHouseCatalog.get(key)).filter(Boolean);
+            const isLeakOrigin = twinSnapshot?.scenario === "leak" && target?.object?.id === twinSnapshot.focusId;
+            const outlineColor = isLeakOrigin ? "#d92d20" : "#ff8f00";
+            const fillColor = isLeakOrigin ? "#ff4d40" : "#ffd000";
             dependencySummary.classList.toggle("is-visible", Boolean(target));
 
             if (!target) {
@@ -1727,26 +2041,28 @@
             }
 
             const totalFlats = houses.reduce((sum, house) => sum + Number(house.flats || 0), 0);
-            dependencySummary.textContent = `${target.object.name}: ${houses.length} домов ниже по ветке${totalFlats ? ` · ${totalFlats} квартир` : ""} · подсвечены реальные здания`;
+            dependencySummary.textContent = isLeakOrigin
+                ? `${target.object.name}: утечка затронула ${houses.length} домов ниже по ветке${totalFlats ? ` · ${totalFlats} квартир` : ""}`
+                : `${target.object.name}: ${houses.length} домов ниже по ветке${totalFlats ? ` · ${totalFlats} квартир` : ""} · подсвечены реальные здания`;
 
             houses.forEach(house => {
                 const housePosition = L.latLng(house.lat, house.lng);
                 const houseLayer = house.outline?.length >= 3
                     ? L.polygon(house.outline, {
                         className: "dependent-building",
-                        color: "#ff8f00",
+                        color: outlineColor,
                         weight: 2.5,
                         opacity: 1,
-                        fillColor: "#ffd000",
+                        fillColor,
                         fillOpacity: 0.68,
                         lineJoin: "round"
                     }).addTo(dependencyLayer)
                     : L.circleMarker(housePosition, {
                         className: "dependent-building",
                         radius: 8,
-                        color: "#ff8f00",
+                        color: outlineColor,
                         weight: 3,
-                        fillColor: "#ffd000",
+                        fillColor,
                         fillOpacity: 0.78
                     }).addTo(dependencyLayer);
                 const details = [house.address];
@@ -1768,7 +2084,10 @@
         }
 
         function refreshDependentHouses() {
-            showDependentHouses(hoveredTarget || aimedTarget);
+            const leakTarget = twinSnapshot?.scenario === "leak"
+                ? selectableObjects.find(target => target.object.id === twinSnapshot.focusId)
+                : null;
+            showDependentHouses(hoveredTarget || leakTarget || aimedTarget);
         }
 
         function scheduleDependentHousesHide() {
@@ -1825,6 +2144,7 @@
         function openCard(object, type, layer) {
             closeCard();
             selectedLayer = layer;
+            activeCardObjectId = object.id;
             if (layer.getElement) layer.getElement()?.classList.add("is-selected");
 
             const color = safeColor(object.color);
@@ -1855,6 +2175,7 @@
             sourceLinkRow.hidden = !hasSafeLink;
             if (hasSafeLink) sourceLink.href = object.link;
             renderDefects(object);
+            renderObjectTelemetry(object.id);
 
             card.classList.add("is-open");
             card.setAttribute("aria-hidden", "false");
@@ -2043,6 +2364,7 @@
 
             updateMapCounter();
             updateSourceEditStatus();
+            initializeDigitalTwin(data);
             scheduleCrosshairUpdate();
         }
 
@@ -2056,6 +2378,7 @@
             }
             closeMapStyleMenu();
             closeSourceEditor();
+            closeTwinPanel();
         });
         map.on("move zoom resize", scheduleCrosshairUpdate);
         document.addEventListener("keydown", event => {
@@ -2064,7 +2387,35 @@
                 closeMapStyleMenu();
                 closeAddressSearch();
                 closeSourceEditor();
+                closeTwinPanel();
             }
+        });
+
+        twinToggle.addEventListener("click", event => {
+            event.stopPropagation();
+            const isOpen = twinControl.classList.toggle("is-open");
+            twinToggle.setAttribute("aria-expanded", String(isOpen));
+            closeAddressSearch();
+            closeMapStyleMenu();
+            closeSourceEditor();
+        });
+        twinPanel.addEventListener("click", event => event.stopPropagation());
+        twinRunToggle.addEventListener("click", () => {
+            if (!digitalTwin) return;
+            if (digitalTwin.running) digitalTwin.pause();
+            else digitalTwin.start();
+        });
+        twinScenarioButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                if (!digitalTwin) return;
+                const scenario = button.dataset.twinScenario;
+                const focus = activeCardObjectId || aimedTarget?.object?.id || hoveredTarget?.object?.id || selectableObjects[0]?.object?.id;
+                digitalTwin.setScenario(scenario, scenario === "leak" ? focus : null);
+                if (scenario === "leak" && focus) {
+                    const target = selectableObjects.find(item => item.object.id === focus);
+                    if (target) openCard(target.object, target.type, target.layer);
+                }
+            });
         });
 
         sourceEditToggle.addEventListener("click", event => {
@@ -2073,6 +2424,7 @@
             sourceEditToggle.setAttribute("aria-expanded", String(isOpen));
             closeAddressSearch();
             closeMapStyleMenu();
+            closeTwinPanel();
         });
         sourceEditPanel.addEventListener("click", event => event.stopPropagation());
         sourceEditMode.addEventListener("click", () => setSourceEditMode(!sourceEditModeEnabled));
@@ -2087,6 +2439,7 @@
             searchToggle.setAttribute("aria-expanded", String(isOpen));
             closeMapStyleMenu();
             closeSourceEditor();
+            closeTwinPanel();
             if (isOpen) {
                 window.setTimeout(() => {
                     addressSearchInput.focus();
@@ -2117,6 +2470,7 @@
             mapStyleToggle.setAttribute("aria-expanded", String(isOpen));
             closeAddressSearch();
             closeSourceEditor();
+            closeTwinPanel();
         });
         mapStyleOptions.forEach(option => {
             option.addEventListener("click", event => {
@@ -2128,11 +2482,12 @@
             if (!mapStyleControl.contains(event.target)) closeMapStyleMenu();
             if (!addressSearch.contains(event.target)) closeAddressSearch();
             if (!sourceEditor.contains(event.target)) closeSourceEditor();
+            if (!twinControl.contains(event.target)) closeTwinPanel();
         });
         setMapStyle(activeStyle);
         window.setInterval(updateLiveDefectTimers, 1000);
 
-        fetch("ktek_map_objects.json?v=20260813-building-outlines", { cache: "no-store" })
+        fetch("ktek_map_objects.json?v=20260814-leak-propagation", { cache: "no-store" })
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return response.json();

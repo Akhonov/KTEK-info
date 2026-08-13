@@ -434,16 +434,19 @@ def build_downstream_dependencies(
         point_nodes.append(nearest if meter_distance(position, node_positions[nearest]) <= 60 else None)
 
     direct_houses_by_node = defaultdict(set)
+    points_by_node = defaultdict(list)
     for point, node in zip(points, point_nodes):
         direct_keys = {house["osmKey"] for house in point.get("dependentHouses", []) if house.get("osmKey")}
         point["dependentHouseKeys"] = sorted(direct_keys)
         if node is not None:
             direct_houses_by_node[node].update(direct_keys)
+            points_by_node[node].append(point)
     for line in lines:
         line["dependentHouseKeys"] = sorted(
             {house["osmKey"] for house in line.get("dependentHouses", []) if house.get("osmKey")}
         )
 
+    node_downstream_objects = {}
     unseen = set(range(len(node_positions)))
     while unseen:
         component_root = next(iter(unseen))
@@ -481,15 +484,54 @@ def build_downstream_dependencies(
             if tree_parent[node] is not None:
                 downstream[tree_parent[node]].update(downstream[node])
 
+        objects_by_node = defaultdict(list)
+        for node in component:
+            objects_by_node[node].extend(points_by_node[node])
+        lower_node_by_line = {}
+        for line_index, (first, second) in enumerate(line_nodes):
+            if first in downstream and second in downstream:
+                lower_node = second if depth.get(second, 0) >= depth.get(first, 0) else first
+                lower_node_by_line[line_index] = lower_node
+                objects_by_node[lower_node].append(lines[line_index])
+
+        children = defaultdict(list)
+        for node, parent_node in tree_parent.items():
+            if parent_node is not None:
+                children[parent_node].append(node)
+        descendant_nodes = {node: {node} for node in component}
+        for node in reversed(order):
+            for child in children[node]:
+                descendant_nodes[node].update(descendant_nodes[child])
+        for node in component:
+            affected = []
+            for descendant in descendant_nodes[node]:
+                level = max(0, depth[descendant] - depth[node])
+                for network_object in objects_by_node[descendant]:
+                    affected.append({"id": network_object["id"], "level": level})
+            node_downstream_objects[node] = affected
+
         for point_index, node in enumerate(point_nodes):
             if node in downstream:
                 direct = set(points[point_index].get("dependentHouseKeys", []))
                 points[point_index]["downstreamHouseKeys"] = sorted(downstream[node] | direct)
+                points[point_index]["downstreamObjects"] = [
+                    item for item in node_downstream_objects[node] if item["id"] != points[point_index]["id"]
+                ]
         for line_index, (first, second) in enumerate(line_nodes):
             if first in downstream and second in downstream:
-                lower_node = second if depth.get(second, 0) >= depth.get(first, 0) else first
+                lower_node = lower_node_by_line[line_index]
                 direct = set(lines[line_index].get("dependentHouseKeys", []))
                 lines[line_index]["downstreamHouseKeys"] = sorted(downstream[lower_node] | direct)
+                lines[line_index]["downstreamObjects"] = [
+                    item for item in node_downstream_objects[lower_node] if item["id"] != lines[line_index]["id"]
+                ]
+
+    for source in heat_sources:
+        nearest = min(
+            range(len(node_positions)),
+            key=lambda node: meter_distance([source["lat"], source["lng"]], node_positions[node]),
+        )
+        source["downstreamObjects"] = node_downstream_objects.get(nearest, [])
 
 
 def build_dependent_house_catalog(items: list[dict]) -> list[dict]:
