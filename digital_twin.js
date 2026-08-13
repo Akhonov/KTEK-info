@@ -28,22 +28,30 @@
 
         register(objects) {
             this.models.clear();
-            objects.forEach(object => {
-                const seed = hash(object.id || object.name);
-                const source = object.type === "Теплоисточник";
-                this.models.set(object.id, {
-                    ...object,
-                    seed,
-                    phase: (seed % 628) / 100,
-                    baseSupply: source ? 86 + (seed % 70) / 10 : 66 + (seed % 150) / 10,
-                    basePressure: source ? 8.1 + (seed % 15) / 10 : 5.1 + (seed % 22) / 10,
-                    baseFlow: source ? 520 + seed % 1450 : 18 + seed % 380,
-                    history: [],
-                    downstreamLevels: new Map(
-                        (object.downstreamObjects || []).map(item => [item.id, Number(item.level || 0)])
-                    )
-                });
+            objects.forEach(object => this.registerObject(object, false));
+            this.tick();
+        }
+
+        registerObject(object, triggerTick = true) {
+            const seed = hash(object.id || object.name);
+            const source = object.type === "Теплоисточник";
+            this.models.set(object.id, {
+                ...object,
+                seed,
+                phase: (seed % 628) / 100,
+                baseSupply: source ? 86 + (seed % 70) / 10 : 66 + (seed % 150) / 10,
+                basePressure: source ? 8.1 + (seed % 15) / 10 : 5.1 + (seed % 22) / 10,
+                baseFlow: source ? 520 + seed % 1450 : 18 + seed % 380,
+                history: [],
+                downstreamLevels: new Map(
+                    (object.downstreamObjects || []).map(item => [item.id, Number(item.level || 0)])
+                )
             });
+            if (triggerTick) this.tick();
+        }
+
+        unregisterObject(id) {
+            this.models.delete(id);
             this.tick();
         }
 

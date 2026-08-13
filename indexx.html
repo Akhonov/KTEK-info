@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>КТЭК — Диспетчерский Центр & Цифровой Двойник Сетей</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <!-- Data Loader: Полная база теплосетей Костаная (781 труба, 434 ТК, 6 ТЭЦ/БМК, 1500+ домов) -->
+    <script src="data_loader.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+
+        .login-card {
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid rgba(51, 65, 85, 0.9);
+            backdrop-filter: blur(24px);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(59,130,246,0.12);
+        }
+
+        .input-field {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #f1f5f9;
+            padding: 9px 12px;
+            width: 100%;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
+        }
+        .input-field::placeholder { color: #64748b; }
+
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary-gradient:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.35); }
+
+        .role-badge {
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 9999px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .role-admin { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+        .role-dispatcher { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .role-brigade { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+        /* Pulsing Emergency Animation */
+        @keyframes pulse-emergency {
+            0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+            70% { transform: scale(1.08); box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .incident-marker-pulse {
+            animation: pulse-emergency 1.8s infinite;
+            border-radius: 50%;
+        }
+
+        /* Pulsing Planned Boiler Animation */
+        @keyframes pulse-planned {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+        .planned-boiler-pulse {
+            animation: pulse-planned 2s infinite;
+        }
+
+        .bg-grid {
+            background-image:
+                linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .modal-overlay {
+            background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .leaflet-container {
+            background: #090d16 !important;
+            font-family: inherit;
+        }
+        .leaflet-popup-content-wrapper {
+            background: #0f172a !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        }
+        .leaflet-popup-tip { background: #0f172a !important; }
+
+        /* Поисковые подсказки адресов */
+        .suggestions-dropdown {
+            position: absolute;
+            left: 0; right: 0; top: 100%;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 70;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.7);
+        }
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #1e293b;
+            transition: background 0.15s;
+        }
+        .suggestion-item:hover { background: #1e293b; color: #38bdf8; }
+
+        /* Баннер режима выбора точки на карте */
+        #mapPickBanner {
+            animation: slide-down 0.3s ease-out;
+        }
+        @keyframes slide-down {
+            from { transform: translate(-50%, -100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        /* Панель рисования теплотрассы */
+        #pipeDrawingToolbar {
+            animation: slide-down 0.3s ease-out;
+        }
+
+        /* Leaflet Control Layer Dark Styling */
+        .leaflet-control-layers {
+            background: #0f172a !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
+            font-size: 12px !important;
+            padding: 8px 12px !important;
+        }
+        .leaflet-control-layers-toggle {
+            filter: invert(1);
+        }
+
+        /* Точки поворота при рисовании */
+        .pipe-vertex-pin {
+            width: 10px;
+            height: 10px;
+            background: #eab308;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(234, 179, 8, 0.9);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 h-screen flex flex-col m-0 overflow-hidden bg-grid">
+
+    <!-- ===== ЭКРАН ВХОДА ===== -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-600/5 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="login-card rounded-2xl p-8 w-full max-w-sm relative z-10">
+            <div class="flex flex-col items-center mb-6">
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-lg shadow-orange-500/20"
+                     style="background: linear-gradient(135deg, #ef4444, #f97316);">
+                    🔥
+                </div>
+                <h1 class="text-xl font-bold text-white tracking-tight">КТЭК Мониторинг</h1>
+                <p class="text-xs text-slate-400 mt-1">Цифровой Двойник Теплосетей Костаная</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" class="flex flex-col gap-3.5">
+                <div>
+                    <label class="text-xs text-slate-300 mb-1.5 block font-medium">Email оператора / бригады</label>
+                    <input id="emailInput" type="email" class="input-field" placeholder="admin@ktek.kz" required autocomplete="email" />
+                </div>
+
+                <div>
+                    <label class="text-xs text-slate-300 mb-1.5 block font-medium">Пароль</label>
+                    <div class="relative">
+                        <input id="passwordInput" type="password" class="input-field" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 40px;" />
+                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-sm">
+                            <i id="eyeIcon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="errorBox" class="hidden bg-red-500/10 border border-red-500/30 rounded-lg p-2.5 text-xs text-red-300 flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-red-400"></i>
+                    <span id="errorText"></span>
+                </div>
+
+                <button type="submit" id="loginBtn" class="btn-primary-gradient py-2.5 text-sm font-semibold mt-2">
+                    Войти в систему
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-slate-800/80 text-center">
+                <div class="text-[11px] text-slate-500">Доступные роли: Администратор, Диспетчер, Бригады 1-5</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ОСНОВНОЙ ИНТЕРФЕЙС ===== -->
+    <div id="appContainer" class="hidden flex flex-col h-full">
+        <!-- Шапка -->
+        <header class="bg-slate-950 border-b border-slate-800 px-4 py-2.5 flex justify-between items-center flex-shrink-0 z-20">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-md"
+                     style="background: linear-gradient(135deg, #ef4444, #f97316);">🔥</div>
+                <div>
+                    <h1 class="font-bold text-sm text-slate-100 flex items-center gap-2">
+                        КТЭК: Цифровой Двойник Костаная
+                        <span id="userRoleBadge" class="role-badge"></span>
+                    </h1>
+                    <div id="userRoleTitle" class="text-[11px] text-slate-400"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div id="privilegedControls" class="hidden flex items-center gap-2">
+                    <button onclick="openAddIncidentModal()"
+                        class="text-xs bg-red-600/90 hover:bg-red-500 text-white font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm shadow-red-600/30">
+                        <i class="fa-solid fa-triangle-exclamation"></i> + Зафиксировать аварию
+                    </button>
+                    <button onclick="openAddObjectModal()"
+                        class="text-xs bg-purple-600/90 hover:bg-purple-500 text-white font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm shadow-purple-600/30">
+                        <i class="fa-solid fa-fire"></i> + Добавить котел / ТЭЦ
+                    </button>
+                    <button onclick="startFreePipeDrawing()"
+                        class="text-xs bg-amber-600/90 hover:bg-amber-500 text-white font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm shadow-amber-600/30">
+                        <i class="fa-solid fa-pencil"></i> ✏️ Нарисовать трассу труб
+                    </button>
+                </div>
+
+                <div class="h-5 w-[1px] bg-slate-800 mx-1"></div>
+
+                <button onclick="logout()"
+                    class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-right-from-bracket"></i> Выход
+                </button>
+            </div>
+        </header>
+
+        <!-- Главное рабочее пространство -->
+        <main class="flex-1 flex overflow-hidden min-h-0 relative">
+            <!-- Всплывающий баннер: Выбор точки на карте -->
+            <div id="mapPickBanner" class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-blue-600 text-white px-5 py-2.5 rounded-full shadow-2xl flex items-center gap-3 border border-blue-400/50">
+                <span class="animate-bounce text-lg">📍</span>
+                <span id="pickBannerText" class="text-xs font-semibold">Кликните мышкой по карте на нужное место теплосети / здание</span>
+                <button onclick="cancelMapPick()" class="text-xs bg-blue-800 hover:bg-blue-900 px-2.5 py-1 rounded-full text-blue-200">Отмена</button>
+            </div>
+
+            <!-- ПАНЕЛЬ РИСОВАНИЯ ТЕПЛОТРАССЫ (Инструмент инженера) -->
+            <div id="pipeDrawingToolbar" class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 border-2 border-amber-500 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 backdrop-blur-md">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></span>
+                    <div>
+                        <div class="text-xs font-bold text-amber-300" id="drawingModeTitle">✏️ Режим проектирования теплотрассы</div>
+                        <div class="text-[11px] text-slate-300" id="drawingStats">Кликайте по улицам для прокладки пути. Точек: 0 | Длина: 0 м</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 border-l border-slate-700 pl-3">
+                    <button onclick="undoLastDrawingPoint()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg text-slate-200 border border-slate-700" title="Отменить последнюю точку">
+                        ↩️ Шаг назад
+                    </button>
+                    <button onclick="finishPipeDrawing()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold rounded-lg text-white shadow-lg shadow-emerald-600/30">
+                        💾 Сохранить трассу
+                    </button>
+                    <button onclick="cancelPipeDrawing()" class="px-2.5 py-1 bg-red-600/80 hover:bg-red-600 text-xs rounded-lg text-white">
+                        ✕ Отмена
+                    </button>
+                </div>
+            </div>
+
+            <!-- Боковая колонка -->
+            <aside class="w-84 bg-slate-900 border-r border-slate-800 p-3.5 overflow-y-auto flex flex-col gap-3 flex-shrink-0">
+                <!-- Сводка сети -->
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 shadow-sm">
+                    <h2 class="font-semibold text-[11px] text-blue-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+                        <span>Оперативная сводка</span>
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    </h2>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block">Аварии в базе:</span>
+                            <span id="statIncidentsCount" class="text-base font-bold text-red-400">0</span>
+                        </div>
+                        <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block">Магистралей:</span>
+                            <span id="statPipesCount" class="text-base font-bold text-sky-400">781</span>
+                        </div>
+                        <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block">Камер ТК:</span>
+                            <span id="statChambersCount" class="text-base font-bold text-slate-200">434</span>
+                        </div>
+                        <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block">Котлов & БМК:</span>
+                            <span id="statSourcesCount" class="text-base font-bold text-orange-400">6</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Список активных аварий (из Firebase) -->
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex-1 flex flex-col min-h-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-semibold text-xs text-slate-200 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-exclamation text-red-400"></i>
+                            Журнал аварий и дефектов
+                        </h3>
+                        <span id="liveBadge" class="text-[9px] bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded border border-red-500/30">LIVE</span>
+                    </div>
+
+                    <div id="incidentsList" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+                        <div class="text-slate-500 text-center py-6 text-xs">Нет активных аварий в базе</div>
+                    </div>
+                </div>
+
+                <!-- Список добавленных котлов и спроектированных трасс -->
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex-1 flex flex-col min-h-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-semibold text-xs text-purple-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-fire"></i>
+                            Новые котлы & Спроектированные сети
+                        </h3>
+                        <span id="customObjCount" class="text-[10px] text-purple-300 font-bold">0</span>
+                    </div>
+
+                    <div id="customObjectsList" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+                        <div class="text-slate-500 text-center py-4 text-xs">Нет добавленных энергоблоков</div>
+                    </div>
+                </div>
+
+                <!-- Спец-панель для Бригады / Диспетчера -->
+                <div id="roleActionPanel" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+                    <!-- Заполняется по роли -->
+                </div>
+            </aside>
+
+            <!-- Leaflet карта -->
+            <div id="map" class="flex-1 min-h-0 relative z-10"></div>
+        </main>
+    </div>
+
+    <!-- ===== МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ АВАРИИ ===== -->
+    <div id="addIncidentModal" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                <h3 class="font-bold text-base text-red-400 flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Фиксация новой аварии / порыва
+                </h3>
+                <button onclick="closeModal('addIncidentModal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+
+            <form onsubmit="submitNewIncident(event)" class="space-y-3 text-xs">
+                <div class="relative">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-slate-300 font-medium">Адрес аварии (Улица и номер дома / ТК)</label>
+                        <button type="button" onclick="pickCoordsFromMap('incident')" class="text-[11px] text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-location-crosshairs"></i> Указать на карте
+                        </button>
+                    </div>
+                    <input id="incAddress" type="text" class="input-field" placeholder="Начните ввод: Баймагамбетова 152, Абая, ТК-13..." autocomplete="off" oninput="handleAddressSearch(this.value, 'incident')" required />
+                    <div id="incAddressSuggestions" class="suggestions-dropdown hidden"></div>
+                </div>
+
+                <input type="hidden" id="incLat" />
+                <input type="hidden" id="incLng" />
+                <div id="incCoordsStatus" class="text-[11px] text-amber-300 flex items-center gap-1.5 bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                    <i class="fa-solid fa-map-pin"></i>
+                    <span id="incCoordsStatusText">Выберите адрес из списка подсказок или кликните на карту</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-slate-300 block mb-1 font-medium">Тип повреждения</label>
+                        <select id="incType" class="input-field">
+                            <option value="Порыв магистрали">Порыв магистрали</option>
+                            <option value="Свищ в камере ТК">Свищ в камере ТК</option>
+                            <option value="Утечка теплоносителя">Утечка теплоносителя</option>
+                            <option value="Засор грязевика">Засор грязевика</option>
+                            <option value="Неучтенный отбор">Неучтенный отбор</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-slate-300 block mb-1 font-medium">Срочность</label>
+                        <select id="incSeverity" class="input-field">
+                            <option value="high">Критический (Высокий)</option>
+                            <option value="med">Средний</option>
+                            <option value="low">Низкий (Плановый)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-slate-300 block mb-1 font-medium">Назначить бригаду</label>
+                    <select id="incBrigade" class="input-field">
+                        <option value="Бригада №1 (Центр)">Бригада №1 (Центр)</option>
+                        <option value="Бригада №2 (КСК)">Бригада №2 (КСК)</option>
+                        <option value="Бригада №3 (Запад)">Бригада №3 (Запад)</option>
+                        <option value="Бригада №4 (Юбилейный)">Бригада №4 (Юбилейный)</option>
+                        <option value="Бригада №5 (Аварийная)">Бригада №5 (Аварийная)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-slate-300 block mb-1 font-medium">Описание дефекта</label>
+                    <textarea id="incDesc" class="input-field" rows="2" placeholder="Зафиксировано падение давления, выход пара из лотка..."></textarea>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('addIncidentModal')" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg">Отмена</button>
+                    <button type="submit" class="flex-1 py-2 bg-red-600 hover:bg-red-500 font-bold text-white rounded-lg shadow-lg shadow-red-600/30">Сохранить аварию</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ КОТЛА ===== -->
+    <div id="addObjectModal" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                <h3 class="font-bold text-base text-purple-400 flex items-center gap-2">
+                    <i class="fa-solid fa-fire"></i>
+                    Добавить новый котел / БМК / ТЭЦ
+                </h3>
+                <button onclick="closeModal('addObjectModal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+
+            <form onsubmit="submitNewObject(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="text-slate-300 block mb-1 font-medium">Наименование энергообъекта</label>
+                    <input id="objName" type="text" class="input-field" placeholder="БМК-Юбилейный-2, Котлоагрегат КВ-ГМ ст. №7..." required />
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-slate-300 block mb-1 font-medium">Тип объекта</label>
+                        <select id="objType" class="input-field">
+                            <option value="bmk">БМК (Блочно-модульная котельная)</option>
+                            <option value="boiler">Котёл (Новый энергоблок)</option>
+                            <option value="pump">ПНС (Насосная станция)</option>
+                            <option value="ctp">ЦТП / Тепловой пункт</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-slate-300 block mb-1 font-medium">Статус / Режим</label>
+                        <select id="objStatus" class="input-field">
+                            <option value="active">🟢 В работе (Действующий)</option>
+                            <option value="planned">🟡 В планах (Для аналитики & моделирования)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Адрес и привязка -->
+                <div class="relative">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-slate-300 font-medium">Адрес размещения / Район</label>
+                        <button type="button" onclick="pickCoordsFromMap('object')" class="text-[11px] text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-location-crosshairs"></i> Указать на карте
+                        </button>
+                    </div>
+                    <input id="objAddress" type="text" class="input-field" placeholder="Начните ввод улицы/дома или кликните на карте..." autocomplete="off" oninput="handleAddressSearch(this.value, 'object')" required />
+                    <div id="objAddressSuggestions" class="suggestions-dropdown hidden"></div>
+                </div>
+
+                <!-- Скрытые координаты -->
+                <input type="hidden" id="objLat" />
+                <input type="hidden" id="objLng" />
+                <div id="objCoordsStatus" class="text-[11px] text-amber-300 flex items-center gap-1.5 bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                    <i class="fa-solid fa-map-pin"></i>
+                    <span id="objCoordsStatusText">Выберите адрес или укажите точку кликом на карте</span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="text-slate-300 block mb-1 font-medium">Мощность</label>
+                        <input id="objPower" type="text" class="input-field" placeholder="25.0 Гкал/ч" />
+                    </div>
+                    <div>
+                        <label class="text-slate-300 block mb-1 font-medium">Расход (G)</label>
+                        <input id="objFlow" type="text" class="input-field" placeholder="450 т/ч" />
+                    </div>
+                    <div>
+                        <label class="text-slate-300 block mb-1 font-medium">Температура T1</label>
+                        <input id="objT1" type="text" class="input-field" placeholder="95 °C" />
+                    </div>
+                </div>
+
+                <!-- Чекбокс: Начать рисование трассы сразу после создания -->
+                <div class="bg-purple-950/30 p-2.5 rounded-lg border border-purple-800/40 flex items-center gap-2">
+                    <input type="checkbox" id="autoStartDrawing" checked class="w-4 h-4 text-purple-600 rounded bg-slate-800 border-slate-700" />
+                    <label for="autoStartDrawing" class="text-xs text-purple-200 cursor-pointer">
+                        Сразу перейти к рисованию теплотрассы от этого котла ✏️
+                    </label>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('addObjectModal')" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg">Отмена</button>
+                    <button type="submit" class="flex-1 py-2 bg-purple-600 hover:bg-purple-500 font-bold text-white rounded-lg shadow-lg shadow-purple-600/30">Сохранить объект</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛЬНОЕ ОКНО: СОХРАНЕНИЕ СПРОЕКТИРОВАННОЙ ТРАССЫ ===== -->
+    <div id="savePipelineModal" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                <h3 class="font-bold text-base text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-pencil"></i>
+                    Сохранить спроектированную теплотрассу
+                </h3>
+                <button onclick="closeModal('savePipelineModal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+
+            <form onsubmit="submitDrawnPipeline(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="text-slate-300 block mb-1 font-medium">Наименование трассы</label>
+                    <input id="pipeName" type="text" class="input-field" placeholder="Магистраль от БМК-Юбилейный к ТК-23..." required />
+                </div>
+
+                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-1">
+                    <div class="flex justify-between text-slate-400">
+                        <span>Источник отправления:</span>
+                        <span id="pipeSourceLabel" class="text-amber-300 font-semibold">—</span>
+                    </div>
+                    <div class="flex justify-between text-slate-400">
+                        <span>Общая длина пути:</span>
+                        <span id="pipeLengthLabel" class="text-emerald-400 font-bold">0 м</span>
+                    </div>
+                    <div class="flex justify-between text-slate-400">
+                        <span>Количество поворотов (точек):</span>
+                        <span id="pipePointsLabel" class="text-slate-200">0</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-slate-300 block mb-1 font-medium">Диаметр трубы (ДУ)</label>
+                        <select id="pipeDiameter" class="input-field">
+                            <option value="530">ф530 мм (Магистраль)</option>
+                            <option value="426">ф426 мм (Магистраль)</option>
+                            <option value="325" selected>ф325 мм (Распределительная)</option>
+                            <option value="219">ф219 мм (Квартальная)</option>
+                            <option value="159">ф159 мм (Вводная)</option>
+                            <option value="108">ф108 мм (Подводящая)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-slate-300 block mb-1 font-medium">Статус трассы</label>
+                        <select id="pipeStatus" class="input-field">
+                            <option value="planned">🟡 Проектируемая (Аналитика)</option>
+                            <option value="active">🟢 Действующая (В работе)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('savePipelineModal')" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg">Продолжить рисование</button>
+                    <button type="submit" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 font-bold text-white rounded-lg shadow-lg shadow-amber-600/30">Сохранить в базу</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (ES Modules) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import {
+            getDatabase,
+            ref,
+            get,
+            push,
+            onValue,
+            remove
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4kVWah6OImJwTFUi2hKN5NdEEY6zfdcs",
+            authDomain: "ktek-698db.firebaseapp.com",
+            databaseURL: "https://ktek-698db-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "ktek-698db",
+            storageBucket: "ktek-698db.firebasestorage.app",
+            messagingSenderId: "411782902337",
+            appId: "1:411782902337:web:341325fa6d56cbd937ccc0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let map = null;
+        let currentUserProfile = null;
+        let incidentMarkers = {};
+        let customObjectMarkers = {};
+        let customPipeLines = {};
+        let pickingMode = null; // 'incident' or 'object'
+        let tempPickMarker = null;
+
+        // ── ПЕРЕМЕННЫЕ РЕЖИМА РИСОВАНИЯ ТРАССЫ ──
+        let isDrawingPipe = false;
+        let currentDrawnPoints = [];
+        let drawingSourceInfo = { id: null, name: "Свободная трасса", lat: null, lng: null };
+        let activePolylinePreview = null;
+        let vertexMarkerGroup = null;
+
+        let mapLayers = {
+            pipelines: null,
+            chambers: null,
+            sources: null,
+            houses: null,
+            incidents: null,
+            customObjects: null,
+            customPipelines: null
+        };
+
+        // ── 0. ИНИЦИАЛИЗАЦИЯ ДАННЫХ КОСТАНАЯ (1500+ ДОМОВ, 781 ТРУБА) ──
+        if (window.KTEKData && window.KTEKData.init) {
+            window.KTEKData.init();
+        }
+
+        // ── 1. АВТОРИЗАЦИЯ ──
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                let profile = { name: user.email, role: 'brigade', email: user.email };
+                try {
+                    const snap = await get(ref(db, 'users'));
+                    if (snap.exists()) {
+                        const usersData = snap.val();
+                        for (let k in usersData) {
+                            if (usersData[k].email && usersData[k].email.toLowerCase() === user.email.toLowerCase()) {
+                                profile = { ...profile, ...usersData[k] };
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Ошибка профиля:", e);
+                }
+
+                currentUserProfile = profile;
+                showApp(user, profile);
+            } else {
+                showLogin();
+            }
+        });
+
+        window.handleLogin = async function (e) {
+            e.preventDefault();
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+            const btn = document.getElementById('loginBtn');
+            const errorBox = document.getElementById('errorBox');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Проверка...';
+            errorBox.classList.add('hidden');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (err) {
+                const msgs = {
+                    'auth/user-not-found': 'Пользователь не найден.',
+                    'auth/wrong-password': 'Неверный пароль.',
+                    'auth/invalid-credential': 'Неверный логин или пароль.'
+                };
+                document.getElementById('errorText').textContent = msgs[err.code] || ('Ошибка: ' + err.message);
+                errorBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Войти в систему';
+            }
+        };
+
+        window.logout = async () => { await signOut(auth); };
+
+        window.togglePassword = () => {
+            const inp = document.getElementById('passwordInput');
+            const icon = document.getElementById('eyeIcon');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                inp.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        };
+
+        function showLogin() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+            if (map) { map.remove(); map = null; }
+        }
+
+        function showApp(user, profile) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+
+            const badge = document.getElementById('userRoleBadge');
+            document.getElementById('userRoleTitle').textContent = profile.name || user.email;
+
+            const privControls = document.getElementById('privilegedControls');
+            if (profile.role === 'admin') {
+                badge.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Администратор';
+                badge.className = 'role-badge role-admin';
+                privControls.classList.remove('hidden');
+            } else if (profile.role === 'dispatcher') {
+                badge.innerHTML = '<i class="fa-solid fa-desktop"></i> Диспетчер';
+                badge.className = 'role-badge role-dispatcher';
+                privControls.classList.remove('hidden');
+            } else {
+                badge.innerHTML = '<i class="fa-solid fa-wrench"></i> ' + (profile.name || 'Бригада');
+                badge.className = 'role-badge role-brigade';
+                privControls.classList.add('hidden');
+            }
+
+            renderRolePanel(profile);
+
+            setTimeout(() => {
+                initRealFullMap();
+                listenToFirebaseData();
+            }, 100);
+        }
+
+        // ── 2. РЕАЛЬНАЯ ПОЛНАЯ КАРТА КОСТАНАЯ (ВСЕ ТРУБЫ, КАМЕРЫ, ДОМА, ИСТОЧНИКИ) ──
+        function initRealFullMap() {
+            if (map) return;
+
+            map = L.map('map', {
+                center: [53.2144, 63.6246],
+                zoom: 13,
+                zoomControl: true
+            });
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap & CARTO (КТЭК Костанай)'
+            }).addTo(map);
+
+            mapLayers.pipelines = L.layerGroup().addTo(map);
+            mapLayers.chambers = L.layerGroup().addTo(map);
+            mapLayers.sources = L.layerGroup().addTo(map);
+            mapLayers.houses = L.layerGroup();
+            mapLayers.incidents = L.layerGroup().addTo(map);
+            mapLayers.customObjects = L.layerGroup().addTo(map);
+            mapLayers.customPipelines = L.layerGroup().addTo(map);
+            vertexMarkerGroup = L.layerGroup().addTo(map);
+
+            // 1. Рендер 781 участка официальных теплотрасс
+            if (window.KTEKData && window.KTEKData.pipelines) {
+                window.KTEKData.pipelines.forEach(pipe => {
+                    const pts = pipe.waypoints && pipe.waypoints.length >= 2 ? pipe.waypoints : null;
+                    if (pts) {
+                        const isMag = pipe.isMagistral || pipe.diameter >= 400;
+                        const line = L.polyline(pts, {
+                            color: isMag ? '#38bdf8' : '#0284c7',
+                            weight: isMag ? 4.5 : 2.5,
+                            opacity: 0.82
+                        });
+                        line.bindPopup(`
+                            <div class="text-xs">
+                                <h4 class="font-bold text-sky-400 mb-1">🔧 ${pipe.name}</h4>
+                                <p><strong>Тип:</strong> ${isMag ? 'Магистральная теплотрасса' : 'Внутриквартальная сеть'}</p>
+                                <p><strong>Диаметр:</strong> ф${pipe.diameter} мм | <strong>Длина:</strong> ${pipe.lengthM} м</p>
+                                <p><strong>Год прокладки:</strong> ${pipe.year} (${2026 - pipe.year} лет)</p>
+                            </div>
+                        `);
+                        mapLayers.pipelines.addLayer(line);
+                    }
+                });
+            }
+
+            // 2. Рендер 434 камер ТК
+            if (window.KTEKData && window.KTEKData.chambers) {
+                window.KTEKData.chambers.forEach(c => {
+                    if (c.lat && c.lng) {
+                        const marker = L.circleMarker([c.lat, c.lng], {
+                            radius: 3.5,
+                            color: '#64748b',
+                            fillColor: '#38bdf8',
+                            fillOpacity: 0.9,
+                            weight: 1
+                        });
+                        marker.bindPopup(`
+                            <div class="text-xs">
+                                <h4 class="font-bold text-sky-300 mb-1">📦 Тепловая камера ${c.id}</h4>
+                                <p><strong>Наименование:</strong> ${c.name || c.id}</p>
+                                <p><strong>P1:</strong> ${c.p1 || 6.2} бар | <strong>T1:</strong> ${c.t1 || 88} °C</p>
+                            </div>
+                        `);
+                        mapLayers.chambers.addLayer(marker);
+                    }
+                });
+            }
+
+            // 3. Рендер 6 основных источников
+            if (window.KTEKData && window.KTEKData.sources) {
+                window.KTEKData.sources.forEach(src => {
+                    if (src.lat && src.lng) {
+                        const icon = L.divIcon({
+                            className: '',
+                            html: `<div style="background:#ea580c;color:white;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 0 16px #ea580c;font-size:16px;">🏭</div>`,
+                            iconSize: [34, 34],
+                            iconAnchor: [17, 17]
+                        });
+                        const m = L.marker([src.lat, src.lng], { icon: icon });
+                        m.bindPopup(`
+                            <div class="text-xs">
+                                <h3 class="font-bold text-orange-400 mb-1">🏭 ${src.name}</h3>
+                                <p><strong>Тип:</strong> ${src.type.toUpperCase()}</p>
+                                <p><strong>Мощность:</strong> ${src.powerGcal || '120'} Гкал/ч</p>
+                                <p><strong>P1 (Подача):</strong> ${src.p1 || 9.0} бар | <strong>T1:</strong> ${src.t1 || 95} °C</p>
+                                <button onclick="startPipeDrawingFromSource('${src.id}', '${src.name}', ${src.lat}, ${src.lng})" class="mt-2 w-full py-1 bg-amber-600 hover:bg-amber-500 text-white rounded font-bold text-[11px]">
+                                    ✏️ Нарисовать трассу от этого источника
+                                </button>
+                            </div>
+                        `);
+                        mapLayers.sources.addLayer(m);
+                    }
+                });
+            }
+
+            // 4. Рендер домов
+            if (window.KTEKData && window.KTEKData.houses) {
+                window.KTEKData.houses.forEach(h => {
+                    if (h.lat && h.lng) {
+                        const circle = L.circleMarker([h.lat, h.lng], {
+                            radius: 3,
+                            color: '#10b981',
+                            fillColor: '#10b981',
+                            fillOpacity: 0.7,
+                            weight: 1
+                        });
+                        circle.bindPopup(`
+                            <div class="text-xs">
+                                <h5 class="font-bold text-emerald-400">🏠 ул. ${h.street}, д. ${h.house}</h5>
+                                <p><strong>ТК подключения:</strong> ${h.tk || 'ТК-1'}</p>
+                                <p><strong>Квартир:</strong> ${h.flats || 1} | <strong>Этажей:</strong> ${h.floors || 1}</p>
+                                <p><strong>Статус:</strong> 🟢 Отапливается</p>
+                            </div>
+                        `);
+                        mapLayers.houses.addLayer(circle);
+                    }
+                });
+            }
+
+            L.control.layers(null, {
+                "🔥 Источники и ТЭЦ": mapLayers.sources,
+                "🔧 Теплопроводы (781)": mapLayers.pipelines,
+                "📦 Камеры ТК (434)": mapLayers.chambers,
+                "🏠 Дома потребителей (1500+)": mapLayers.houses,
+                "🚨 Аварии и порывы": mapLayers.incidents,
+                "⚙️ Новые котлы & БМК": mapLayers.customObjects,
+                "✏️ Спроектированные трассы": mapLayers.customPipelines
+            }, { position: 'topright' }).addTo(map);
+
+            // КЛИК ПО КАРТЕ (Режимы: 1) Рисование трассы; 2) Выбор одиночной точки)
+            map.on('click', (e) => {
+                const lat = parseFloat(e.latlng.lat.toFixed(6));
+                const lng = parseFloat(e.latlng.lng.toFixed(6));
+
+                // ── РЕЖИМ 1: РИСОВАНИЕ ТЕПЛОТРАССЫ ──
+                if (isDrawingPipe) {
+                    addDrawingVertex(lat, lng);
+                    return;
+                }
+
+                // ── РЕЖИМ 2: ВЫБОР ТОЧКИ ДЛЯ ФОРМЫ ──
+                if (!pickingMode) return;
+
+                if (tempPickMarker) map.removeLayer(tempPickMarker);
+                tempPickMarker = L.marker([lat, lng]).addTo(map);
+
+                if (pickingMode === 'incident') {
+                    document.getElementById('incLat').value = lat;
+                    document.getElementById('incLng').value = lng;
+                    document.getElementById('incCoordsStatus').className = "text-[11px] text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 p-2 rounded border border-emerald-500/20";
+                    document.getElementById('incCoordsStatusText').innerHTML = `📍 Выбрана точка на карте: <b>${lat}, ${lng}</b>`;
+                    if (!document.getElementById('incAddress').value) {
+                        document.getElementById('incAddress').value = `Точка сети (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                    }
+                    openModal('addIncidentModal');
+                } else if (pickingMode === 'object') {
+                    document.getElementById('objLat').value = lat;
+                    document.getElementById('objLng').value = lng;
+                    document.getElementById('objCoordsStatus').className = "text-[11px] text-purple-400 flex items-center gap-1.5 bg-purple-500/10 p-2 rounded border border-purple-500/20";
+                    document.getElementById('objCoordsStatusText').innerHTML = `📍 Выбрана точка на карте: <b>${lat}, ${lng}</b>`;
+                    if (!document.getElementById('objAddress').value) {
+                        document.getElementById('objAddress').value = `Участок (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                    }
+                    openModal('addObjectModal');
+                }
+
+                cancelMapPick();
+            });
+        }
+
+        // ── 3. ИНСТРУМЕНТ ИНТЕРАКТИВНОГО РИСОВАНИЯ ТРАССЫ ТРУБ ✏️ ──
+        window.startPipeDrawingFromSource = function(id, name, lat, lng) {
+            map.closePopup();
+            isDrawingPipe = true;
+            currentDrawnPoints = [[lat, lng]];
+            drawingSourceInfo = { id, name, lat, lng };
+
+            document.getElementById('drawingModeTitle').textContent = `✏️ Проектирование трассы от: ${name}`;
+            document.getElementById('pipeDrawingToolbar').classList.remove('hidden');
+            renderDrawingPreview();
+        };
+
+        window.startFreePipeDrawing = function() {
+            isDrawingPipe = true;
+            currentDrawnPoints = [];
+            drawingSourceInfo = { id: null, name: "Спроектированная трасса", lat: null, lng: null };
+
+            document.getElementById('drawingModeTitle').textContent = `✏️ Режим рисования: кликайте по карте`;
+            document.getElementById('pipeDrawingToolbar').classList.remove('hidden');
+            renderDrawingPreview();
+        };
+
+        function addDrawingVertex(lat, lng) {
+            currentDrawnPoints.push([lat, lng]);
+            renderDrawingPreview();
+        }
+
+        window.undoLastDrawingPoint = function() {
+            if (currentDrawnPoints.length > 0) {
+                currentDrawnPoints.pop();
+                renderDrawingPreview();
+            }
+        };
+
+        window.cancelPipeDrawing = function() {
+            isDrawingPipe = false;
+            currentDrawnPoints = [];
+            if (activePolylinePreview) {
+                map.removeLayer(activePolylinePreview);
+                activePolylinePreview = null;
+            }
+            vertexMarkerGroup.clearLayers();
+            document.getElementById('pipeDrawingToolbar').classList.add('hidden');
+        };
+
+        function calculatePolylineLengthM(points) {
+            let total = 0;
+            for (let i = 0; i < points.length - 1; i++) {
+                total += map.distance(points[i], points[i + 1]);
+            }
+            return Math.round(total);
+        }
+
+        function renderDrawingPreview() {
+            vertexMarkerGroup.clearLayers();
+
+            if (currentDrawnPoints.length === 0) {
+                document.getElementById('drawingStats').textContent = 'Кликните на карте для установки начальной точки трассы.';
+                if (activePolylinePreview) {
+                    map.removeLayer(activePolylinePreview);
+                    activePolylinePreview = null;
+                }
+                return;
+            }
+
+            // Ставим маркеры на каждую точку поворота
+            currentDrawnPoints.forEach((pt, idx) => {
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div class="pipe-vertex-pin" title="Точка ${idx + 1}"></div>`,
+                    iconSize: [10, 10],
+                    iconAnchor: [5, 5]
+                });
+                L.marker(pt, { icon }).addTo(vertexMarkerGroup);
+            });
+
+            // Рисуем живую полилинию предпросмотра
+            if (currentDrawnPoints.length >= 2) {
+                if (activePolylinePreview) map.removeLayer(activePolylinePreview);
+                activePolylinePreview = L.polyline(currentDrawnPoints, {
+                    color: '#eab308',
+                    weight: 5,
+                    dashArray: '8, 8',
+                    opacity: 0.9
+                }).addTo(map);
+
+                const totalLength = calculatePolylineLengthM(currentDrawnPoints);
+                document.getElementById('drawingStats').innerHTML = `Точек поворота: <b>${currentDrawnPoints.length}</b> | Длина трассы: <b class="text-emerald-400">${totalLength} м</b>`;
+            } else {
+                document.getElementById('drawingStats').innerHTML = `Начальная точка зафиксирована. Кликните далее вдоль улицы для прокладки труб.`;
+            }
+        }
+
+        window.finishPipeDrawing = function() {
+            if (currentDrawnPoints.length < 2) {
+                alert("Для создания трассы необходимо поставить как минимум 2 точки на карте!");
+                return;
+            }
+
+            const totalLength = calculatePolylineLengthM(currentDrawnPoints);
+            document.getElementById('pipeSourceLabel').textContent = drawingSourceInfo.name;
+            document.getElementById('pipeLengthLabel').textContent = `${totalLength} м`;
+            document.getElementById('pipePointsLabel').textContent = currentDrawnPoints.length;
+            document.getElementById('pipeName').value = `Трасса от ${drawingSourceInfo.name}`;
+
+            openModal('savePipelineModal');
+        };
+
+        window.submitDrawnPipeline = async function(e) {
+            e.preventDefault();
+            const totalLength = calculatePolylineLengthM(currentDrawnPoints);
+
+            const newPipe = {
+                name: document.getElementById('pipeName').value,
+                sourceName: drawingSourceInfo.name,
+                sourceId: drawingSourceInfo.id || null,
+                diameter: parseInt(document.getElementById('pipeDiameter').value) || 325,
+                status: document.getElementById('pipeStatus').value, // 'planned' or 'active'
+                lengthM: totalLength,
+                waypoints: currentDrawnPoints,
+                createdAt: new Date().toISOString(),
+                author: currentUserProfile.email || 'Admin'
+            };
+
+            await push(ref(db, 'custom_pipelines'), newPipe);
+            closeModal('savePipelineModal');
+            cancelPipeDrawing();
+        };
+
+        // ── 4. УМНЫЙ АВТОПОИСК АДРЕСА ПО БАЗЕ КОСТАНАЯ (ДОМА + ТК + УЛИЦЫ) ──
+        window.handleAddressSearch = function(query, target) {
+            const dropdown = document.getElementById(target === 'incident' ? 'incAddressSuggestions' : 'objAddressSuggestions');
+            if (!query || query.trim().length < 2) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const q = query.trim().toLowerCase();
+            const results = [];
+
+            if (window.KTEKData && window.KTEKData.houses) {
+                for (let h of window.KTEKData.houses) {
+                    const fullAddr = `${h.street} ${h.house}`.toLowerCase();
+                    if (fullAddr.includes(q) && h.lat && h.lng) {
+                        results.push({
+                            name: `🏠 ул. ${h.street}, д. ${h.house}`,
+                            lat: h.lat,
+                            lng: h.lng,
+                            cleanAddr: `ул. ${h.street}, д. ${h.house}`
+                        });
+                        if (results.length >= 6) break;
+                    }
+                }
+            }
+
+            if (results.length < 6 && window.KTEKData && window.KTEKData.chambers) {
+                for (let c of window.KTEKData.chambers) {
+                    const cid = (c.id || '').toLowerCase();
+                    const cname = (c.name || '').toLowerCase();
+                    if ((cid.includes(q) || cname.includes(q)) && c.lat && c.lng) {
+                        results.push({
+                            name: `📦 Камера ${c.id} (${c.name || ''})`,
+                            lat: c.lat,
+                            lng: c.lng,
+                            cleanAddr: `Камера ${c.id}`
+                        });
+                        if (results.length >= 8) break;
+                    }
+                }
+            }
+
+            if (results.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = results.map(r => `
+                <div class="suggestion-item text-xs" onclick="selectAddressSuggestion('${r.cleanAddr}', ${r.lat}, ${r.lng}, '${target}')">
+                    ${r.name}
+                </div>
+            `).join('');
+            dropdown.classList.remove('hidden');
+        };
+
+        window.selectAddressSuggestion = function(addr, lat, lng, target) {
+            if (target === 'incident') {
+                document.getElementById('incAddress').value = addr;
+                document.getElementById('incLat').value = lat;
+                document.getElementById('incLng').value = lng;
+                document.getElementById('incCoordsStatus').className = "text-[11px] text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 p-2 rounded border border-emerald-500/20";
+                document.getElementById('incCoordsStatusText').innerHTML = `✅ Точный адрес привязан: <b>${addr}</b> (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+                document.getElementById('incAddressSuggestions').classList.add('hidden');
+            } else {
+                document.getElementById('objAddress').value = addr;
+                document.getElementById('objLat').value = lat;
+                document.getElementById('objLng').value = lng;
+                document.getElementById('objCoordsStatus').className = "text-[11px] text-purple-400 flex items-center gap-1.5 bg-purple-500/10 p-2 rounded border border-purple-500/20";
+                document.getElementById('objCoordsStatusText').innerHTML = `✅ Точный адрес привязан: <b>${addr}</b> (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+                document.getElementById('objAddressSuggestions').classList.add('hidden');
+            }
+        };
+
+        window.pickCoordsFromMap = (mode) => {
+            pickingMode = mode;
+            closeModal(mode === 'incident' ? 'addIncidentModal' : 'addObjectModal');
+            document.getElementById('mapPickBanner').classList.remove('hidden');
+            document.getElementById('pickBannerText').textContent =
+                mode === 'incident' ? 'Кликните на карту в месте аварии / порыва' : 'Кликните на карту в месте размещения нового котла / БМК';
+        };
+
+        window.cancelMapPick = () => {
+            pickingMode = null;
+            document.getElementById('mapPickBanner').classList.add('hidden');
+        };
+
+        // ── 5. СОХРАНЕНИЕ ОБЪЕКТОВ В FIREBASE ──
+        window.submitNewIncident = async function (e) {
+            e.preventDefault();
+            const lat = parseFloat(document.getElementById('incLat').value);
+            const lng = parseFloat(document.getElementById('incLng').value);
+
+            if (!lat || !lng) {
+                alert("Пожалуйста, выберите адрес из подсказок или укажите точку кликом на карте!");
+                return;
+            }
+
+            const newInc = {
+                address: document.getElementById('incAddress').value,
+                lat: lat,
+                lng: lng,
+                type: document.getElementById('incType').value,
+                severity: document.getElementById('incSeverity').value,
+                brigade: document.getElementById('incBrigade').value,
+                desc: document.getElementById('incDesc').value,
+                createdAt: new Date().toISOString(),
+                author: currentUserProfile.email || 'Admin'
+            };
+
+            await push(ref(db, 'incidents'), newInc);
+            closeModal('addIncidentModal');
+            document.getElementById('incAddress').value = '';
+            document.getElementById('incDesc').value = '';
+            document.getElementById('incLat').value = '';
+            document.getElementById('incLng').value = '';
+            if (tempPickMarker) { map.removeLayer(tempPickMarker); tempPickMarker = null; }
+            map.setView([newInc.lat, newInc.lng], 16);
+        };
+
+        window.submitNewObject = async function (e) {
+            e.preventDefault();
+            const lat = parseFloat(document.getElementById('objLat').value);
+            const lng = parseFloat(document.getElementById('objLng').value);
+            const autoStart = document.getElementById('autoStartDrawing').checked;
+
+            if (!lat || !lng) {
+                alert("Пожалуйста, выберите адрес из подсказок или укажите точку кликом на карте!");
+                return;
+            }
+
+            const newObj = {
+                name: document.getElementById('objName').value,
+                address: document.getElementById('objAddress').value,
+                type: document.getElementById('objType').value,
+                status: document.getElementById('objStatus').value, // 'active' or 'planned'
+                power: document.getElementById('objPower').value || '15.0 Гкал/ч',
+                flow: document.getElementById('objFlow').value || '350 т/ч',
+                t1: document.getElementById('objT1').value || '95 °C',
+                lat: lat,
+                lng: lng,
+                createdAt: new Date().toISOString(),
+                author: currentUserProfile.email || 'Admin'
+            };
+
+            const newRef = await push(ref(db, 'custom_objects'), newObj);
+            closeModal('addObjectModal');
+            document.getElementById('objName').value = '';
+            document.getElementById('objAddress').value = '';
+            document.getElementById('objLat').value = '';
+            document.getElementById('objLng').value = '';
+            if (tempPickMarker) { map.removeLayer(tempPickMarker); tempPickMarker = null; }
+            map.setView([newObj.lat, newObj.lng], 15);
+
+            // Если включен чекбокс — сразу активируем режим рисования трассы от этого нового котла!
+            if (autoStart) {
+                startPipeDrawingFromSource(newRef.key, newObj.name, lat, lng);
+            }
+        };
+
+        window.deleteIncident = async function (id) {
+            if (confirm("Отметить аварию как устранённую и удалить из активных?")) {
+                await remove(ref(db, 'incidents/' + id));
+            }
+        };
+
+        window.deleteCustomObject = async function (id) {
+            if (confirm("Удалить данный котел из базы?")) {
+                await remove(ref(db, 'custom_objects/' + id));
+            }
+        };
+
+        window.deleteCustomPipeline = async function(id) {
+            if (confirm("Удалить спроектированную теплотрассу из базы?")) {
+                await remove(ref(db, 'custom_pipelines/' + id));
+            }
+        };
+
+        // ── 6. REALTIME СИНХРОНИЗАЦИЯ FIREBASE С КАРТОЙ ──
+        function listenToFirebaseData() {
+            onValue(ref(db, 'incidents'), (snap) => renderIncidents(snap.val() || {}));
+            onValue(ref(db, 'custom_objects'), (snap) => renderCustomObjects(snap.val() || {}));
+            onValue(ref(db, 'custom_pipelines'), (snap) => renderCustomPipelines(snap.val() || {}));
+        }
+
+        function renderIncidents(incidents) {
+            const listEl = document.getElementById('incidentsList');
+            const countEl = document.getElementById('statIncidentsCount');
+            const keys = Object.keys(incidents);
+
+            countEl.textContent = keys.length;
+            Object.values(incidentMarkers).forEach(m => mapLayers.incidents && mapLayers.incidents.removeLayer(m));
+            incidentMarkers = {};
+
+            if (keys.length === 0) {
+                listEl.innerHTML = '<div class="text-slate-500 text-center py-6 text-xs">Все участки в норме. Аварий нет.</div>';
+                return;
+            }
+
+            listEl.innerHTML = '';
+
+            keys.forEach(id => {
+                const inc = incidents[id];
+                const canDelete = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'dispatcher');
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/90 p-2.5 rounded-lg border border-red-900/40 hover:border-red-500/50 transition cursor-pointer";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold text-red-400 flex items-center gap-1">
+                            <i class="fa-solid fa-fire-flame-curved"></i> ${inc.type}
+                        </span>
+                        ${canDelete ? `<button onclick="deleteIncident('${id}')" class="text-slate-500 hover:text-red-400 text-xs ml-2" title="Устранить аварию">✕</button>` : ''}
+                    </div>
+                    <div class="text-slate-300 font-medium mt-1">${inc.address}</div>
+                    <div class="text-[10px] text-slate-400 mt-1 flex justify-between">
+                        <span>👷 ${inc.brigade}</span>
+                        <span class="text-red-300 font-semibold">${inc.severity === 'high' ? 'Критично' : 'В работе'}</span>
+                    </div>
+                `;
+                card.onclick = (e) => {
+                    if (e.target.tagName !== 'BUTTON') {
+                        map.setView([inc.lat, inc.lng], 16);
+                        if (incidentMarkers[id]) incidentMarkers[id].openPopup();
+                    }
+                };
+                listEl.appendChild(card);
+
+                if (map && inc.lat && inc.lng) {
+                    const icon = L.divIcon({
+                        className: '',
+                        html: `<div class="incident-marker-pulse" style="width:30px;height:30px;background:#ef4444;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:14px;color:white;box-shadow:0 0 16px rgba(239,68,68,0.85)">🚨</div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+
+                    const marker = L.marker([inc.lat, inc.lng], { icon })
+                        .addTo(mapLayers.incidents)
+                        .bindPopup(`
+                            <div class="text-xs">
+                                <h4 class="font-bold text-red-400 mb-1">🚨 ${inc.type}</h4>
+                                <p><strong>Адрес:</strong> ${inc.address}</p>
+                                <p><strong>Бригада:</strong> ${inc.brigade}</p>
+                                <p><strong>Описание:</strong> ${inc.desc || '—'}</p>
+                                <p class="text-[10px] text-slate-400 mt-1">Координаты: ${inc.lat}, ${inc.lng}</p>
+                                ${canDelete ? `<button onclick="window.deleteIncident('${id}')" class="mt-2 w-full py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-bold">Отметить как устранено ✅</button>` : ''}
+                            </div>
+                        `);
+                    incidentMarkers[id] = marker;
+                }
+            });
+        }
+
+        function renderCustomObjects(objects) {
+            const listEl = document.getElementById('customObjectsList');
+            const countEl = document.getElementById('customObjCount');
+            const keys = Object.keys(objects);
+
+            countEl.textContent = keys.length;
+            Object.values(customObjectMarkers).forEach(m => mapLayers.customObjects && mapLayers.customObjects.removeLayer(m));
+            customObjectMarkers = {};
+
+            if (keys.length === 0) {
+                listEl.innerHTML = '<div class="text-slate-500 text-center py-4 text-xs">Нет добавленных энергоблоков</div>';
+                return;
+            }
+
+            listEl.innerHTML = '';
+
+            keys.forEach(id => {
+                const obj = objects[id];
+                const isPlanned = obj.status === 'planned';
+                const canDelete = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'dispatcher');
+
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-lg border transition cursor-pointer ${isPlanned ? 'bg-amber-950/20 border-amber-800/40 hover:border-amber-500/50' : 'bg-purple-950/20 border-purple-800/40 hover:border-purple-500/50'}`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold ${isPlanned ? 'text-amber-400' : 'text-purple-400'} flex items-center gap-1">
+                            <i class="fa-solid fa-fire"></i> ${obj.name}
+                        </span>
+                        ${canDelete ? `<button onclick="deleteCustomObject('${id}')" class="text-slate-500 hover:text-red-400 text-xs ml-2" title="Удалить объект">✕</button>` : ''}
+                    </div>
+                    <div class="text-slate-300 font-medium mt-1">${obj.address || 'Костанай'}</div>
+                    <div class="text-[10px] text-slate-400 mt-1 flex justify-between">
+                        <span>⚡ ${obj.power || '15 Гкал/ч'}</span>
+                        <span class="${isPlanned ? 'text-amber-300 font-semibold' : 'text-emerald-400 font-semibold'}">${isPlanned ? '🟡 В планах' : '🟢 В работе'}</span>
+                    </div>
+                    <div class="mt-2 pt-1 border-t border-slate-800/60 flex gap-1">
+                        <button onclick="startPipeDrawingFromSource('${id}', '${obj.name}', ${obj.lat}, ${obj.lng})" class="w-full py-1 bg-amber-600/80 hover:bg-amber-600 text-white rounded text-[10px] font-semibold">
+                            ✏️ Нарисовать трассу от этого котла
+                        </button>
+                    </div>
+                `;
+                card.onclick = (e) => {
+                    if (e.target.tagName !== 'BUTTON') {
+                        map.setView([obj.lat, obj.lng], 15);
+                        if (customObjectMarkers[id]) customObjectMarkers[id].openPopup();
+                    }
+                };
+                listEl.appendChild(card);
+
+                if (map && obj.lat && obj.lng) {
+                    const bgColor = isPlanned ? '#eab308' : '#a855f7';
+                    const icon = L.divIcon({
+                        className: '',
+                        html: `<div class="${isPlanned ? 'planned-boiler-pulse' : ''}" style="width:32px;height:32px;background:${bgColor};border:2px solid white;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:15px;box-shadow:0 0 14px ${bgColor};">🔥</div>`,
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });
+
+                    const marker = L.marker([obj.lat, obj.lng], { icon })
+                        .addTo(mapLayers.customObjects)
+                        .bindPopup(`
+                            <div class="text-xs">
+                                <h4 class="font-bold ${isPlanned ? 'text-amber-400' : 'text-purple-400'} mb-1">🔥 ${obj.name}</h4>
+                                <p><strong>Статус:</strong> ${isPlanned ? '🟡 Проектируемый (Для аналитики и моделирования)' : '🟢 В работе (Действующий)'}</p>
+                                <p><strong>Тип:</strong> ${obj.type.toUpperCase()}</p>
+                                <p><strong>Мощность:</strong> ${obj.power || '15.0 Гкал/ч'}</p>
+                                <p><strong>Параметры:</strong> G = ${obj.flow || '350 т/ч'}, T1 = ${obj.t1 || '95 °C'}</p>
+                                <p><strong>Адрес:</strong> ${obj.address || '—'}</p>
+                                <button onclick="startPipeDrawingFromSource('${id}', '${obj.name}', ${obj.lat}, ${obj.lng})" class="mt-2 w-full py-1 bg-amber-600 hover:bg-amber-500 text-white rounded font-bold text-[11px]">
+                                    ✏️ Нарисовать трассу от этого котла
+                                </button>
+                                ${canDelete ? `<button onclick="window.deleteCustomObject('${id}')" class="mt-1.5 w-full py-1 bg-red-600/80 hover:bg-red-600 text-white rounded text-[10px]">Удалить котел ✕</button>` : ''}
+                            </div>
+                        `);
+                    customObjectMarkers[id] = marker;
+                }
+            });
+        }
+
+        function renderCustomPipelines(pipelines) {
+            Object.values(customPipeLines).forEach(p => mapLayers.customPipelines && mapLayers.customPipelines.removeLayer(p));
+            customPipeLines = {};
+
+            const keys = Object.keys(pipelines);
+            keys.forEach(id => {
+                const p = pipelines[id];
+                if (map && p.waypoints && p.waypoints.length >= 2) {
+                    const isPlanned = p.status === 'planned';
+                    const color = isPlanned ? '#eab308' : '#a855f7';
+                    const canDelete = currentUserProfile && (currentUserProfile.role === 'admin' || currentUserProfile.role === 'dispatcher');
+
+                    const line = L.polyline(p.waypoints, {
+                        color: color,
+                        weight: p.diameter >= 400 ? 5.5 : 4,
+                        dashArray: isPlanned ? '8, 8' : null,
+                        opacity: 0.9
+                    }).addTo(mapLayers.customPipelines);
+
+                    line.bindPopup(`
+                        <div class="text-xs">
+                            <h4 class="font-bold ${isPlanned ? 'text-amber-400' : 'text-purple-400'} mb-1">📐 ${p.name}</h4>
+                            <p><strong>Источник:</strong> ${p.sourceName || 'Спроектированный ввод'}</p>
+                            <p><strong>Диаметр:</strong> ф${p.diameter} мм</p>
+                            <p><strong>Длина трассы:</strong> ${p.lengthM} м</p>
+                            <p><strong>Статус:</strong> ${isPlanned ? '🟡 Проектируемая (Аналитика)' : '🟢 В работе'}</p>
+                            <p><strong>Точек поворота:</strong> ${p.waypoints.length}</p>
+                            ${canDelete ? `<button onclick="window.deleteCustomPipeline('${id}')" class="mt-2 w-full py-1 bg-red-600 hover:bg-red-500 text-white rounded text-[11px] font-bold">Удалить трассу ✕</button>` : ''}
+                        </div>
+                    `);
+                    customPipeLines[id] = line;
+                }
+            });
+        }
+
+        // ── 7. UI MODAL UTILS ──
+        window.openAddIncidentModal = () => openModal('addIncidentModal');
+        window.openAddObjectModal = () => openModal('addObjectModal');
+        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+        window.closeModal = (id) => {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById('incAddressSuggestions').classList.add('hidden');
+            document.getElementById('objAddressSuggestions').classList.add('hidden');
+        };
+
+        function renderRolePanel(profile) {
+            const panel = document.getElementById('roleActionPanel');
+            if (profile.role === 'admin' || profile.role === 'dispatcher') {
+                panel.innerHTML = `
+                    <h4 class="font-semibold text-sky-400 mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-sliders"></i> Управление сетью
+                    </h4>
+                    <p class="text-[11px] text-slate-400 mb-2">Инструменты проектирования новых энергоблоков и прокладки теплотрасс.</p>
+                    <button onclick="openAddIncidentModal()" class="w-full py-1.5 bg-red-600/80 hover:bg-red-600 text-white font-medium rounded text-xs transition mb-1.5">
+                        + Зафиксировать аварию
+                    </button>
+                    <button onclick="openAddObjectModal()" class="w-full py-1.5 bg-purple-600/80 hover:bg-purple-600 text-white font-medium rounded text-xs transition mb-1.5">
+                        + Добавить котел / ТЭЦ
+                    </button>
+                    <button onclick="startFreePipeDrawing()" class="w-full py-1.5 bg-amber-600/80 hover:bg-amber-600 text-white font-medium rounded text-xs transition">
+                        ✏️ Нарисовать трассу труб
+                    </button>
+                `;
+            } else {
+                panel.innerHTML = `
+                    <h4 class="font-semibold text-amber-400 mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-clipboard-check"></i> Выездной терминал
+                    </h4>
+                    <p class="text-[11px] text-slate-400 mb-2">Нажмите на аварию на карте для получения деталей наряда.</p>
+                    <button onclick="alert('Статус бригады «На объекте» успешно передан диспетчеру!')" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-xs transition">
+                        📡 Доложить статус на линии
+                    </button>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>
