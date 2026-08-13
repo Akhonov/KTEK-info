@@ -1,53 +1,91 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ThermoTrace | КТЭК-СКАДА ЦИФРОВОЙ ДВОЙНИК 2.0</title>
-
-    <!-- Leaflet GIS CSS -->
+    <title>Smart City Map - Kostanay</title>
+    
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <!-- Custom SCADA Design System -->
-    <link rel="stylesheet" href="styles.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Apple Light Map Controls */
+        .leaflet-control-zoom {
+            border-radius: 12px !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+            border: none !important;
+        }
+
+        .leaflet-control-zoom a {
+            background: #fff !important;
+            color: #333 !important;
+            border-bottom: 1px solid #e5e5e5 !important;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .leaflet-control-zoom a:last-child {
+            border-bottom: none !important;
+        }
+
+        .leaflet-control-zoom a:hover {
+            background: #f9f9f9 !important;
+        }
+
+        /* Attribution */
+        .leaflet-control-attribution {
+            background: rgba(255, 255, 255, 0.8) !important;
+            border-radius: 8px !important;
+            font-size: 11px;
+        }
+    </style>
 </head>
+<body>
+    <div id="map"></div>
 
-<body class="thermotrace-dark">
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- THERMOTRACE TOP HEADER BAR (Matching Image 2) -->
-    <header class="tt-header">
-        <div class="tt-header-left">
-            <div class="tt-logo">
-                <div class="tt-logo-icon">
-                    <i class="fa-solid fa-fire-flame-curved"></i>
-                </div>
-                <span class="tt-logo-text">ThermoTrace</span>
-            </div>
+    <script>
+        // Initialize map centered on Kostanay, Kazakhstan
+        const map = L.map('map', {
+            center: [53.2164, 63.6188],
+            zoom: 13,
+            zoomControl: true,
+            attributionControl: true
+        });
 
-            <div class="tt-search-container">
-                <i class="fa-solid fa-magnifying-glass tt-search-icon"></i>
-                <input type="text" id="ttGlobalSearch" placeholder="Поиск по объектам, адресам, ID..." class="tt-search-input">
-                <span class="tt-search-kbd">⌘K</span>
-            </div>
-        </div>
+        // Apple Light Map Layer (CartoDB Voyager - Ultra-clean Light Style)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20,
+            minZoom: 1
+        }).addTo(map);
 
-        <div class="tt-header-center">
-            <div class="tt-time-widget">
-                <i class="fa-regular fa-clock"></i>
-                <span id="ttCurrentDateTime">21 мая 2025, ср | 09:42:18</span>
-            </div>
-            <div class="tt-weather-widget">
-                <i class="fa-solid fa-cloud-sun"></i>
-                <span>12°C Облачно</span>
-            </div>
-
-            <div class="tt-filter-selects">
-                <select id="districtFilterSelect" class="tt-select">
-                    <option value="all">Все районы</option>
-                    <option value="ТЭЦ-1 Центр">ТЭЦ-1 Центр</option>
-                    <option value="ТЭЦ-2 КСК">ТЭЦ-2 КСК</option>
+        console.log('✓ Map loaded successfully');
+    </script>
+</body>
+</html>
                     <option value="РК-3 КЖБИ">РК-3 КЖБИ</option>
                 </select>
                 <select id="magistralFilterSelect" class="tt-select">
