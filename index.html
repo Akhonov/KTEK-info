@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>КТЭК-СКАДА ЦИФРОВОЙ ДВОЙНИК 2.0 | ГКП «КТЭК» г. Костанай</title>
+    
+    <!-- Leaflet GIS CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Custom SCADA Design System -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- SCADA Dispatch Header -->
+    <header class="scada-header">
+        <div class="brand-section">
+            <div class="brand-logo">КТЭК</div>
+            <div class="brand-title">
+                <h1>КТЭК-СКАДА: ЦИФРОВОЙ ДВОЙНИК 2.0</h1>
+                <p>Единая диспетчерская платформа тепловых сетей г. Костанай</p>
+            </div>
+        </div>
+
+        <nav class="header-nav">
+            <button class="nav-tab active" data-tab="map"><i class="fa fa-map-location-dot"></i> ГИС-Карта Apple Light</button>
+            <button class="nav-tab" data-tab="mnemo"><i class="fa fa-diagram-project"></i> Мнемосхема</button>
+            <button class="nav-tab" data-tab="passports"><i class="fa fa-passport"></i> Паспорта Объектов</button>
+            <button class="nav-tab" data-tab="analytics"><i class="fa fa-chart-line"></i> Аналитика УУТЭ & Аномалии</button>
+            <button class="nav-tab" data-tab="equipment"><i class="fa fa-boxes-stacked"></i> Оборудование & Спецтехника</button>
+            <button class="nav-tab" data-tab="tablet"><i class="fa fa-tablet-screen-button"></i> АРМ Планшет</button>
+            <button class="nav-tab" data-tab="predictive"><i class="fa fa-brain"></i> AI Риски</button>
+        </nav>
+
+        <div class="header-status-panel">
+            <div class="kpi-badge">
+                <i class="fa fa-building text-muted"></i> Домов: <span id="totalHousesCount" class="kpi-val">6,455</span>
+            </div>
+            <div class="kpi-badge">
+                <i class="fa fa-power-off text-danger"></i> Отключено: <span id="totalDefectsCount" class="kpi-val danger">0</span>
+            </div>
+            <div class="kpi-badge">
+                <i class="fa fa-fire-flame-curved text-danger"></i> Потери: <span id="totalLostHeatCount" class="kpi-val danger">0.000</span> Гкал/ч
+            </div>
+            <div class="kpi-badge">
+                <i class="fa fa-square-minus text-warning"></i> Закрытые ТК: <span id="closedChambersCount" class="kpi-val warning">0</span>
+            </div>
+            <div class="kpi-badge">
+                <i class="fa fa-triangle-exclamation text-warning"></i> Аномалии УУТЭ: <span id="scadaAlertCount" class="kpi-val warning">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Main Container -->
+    <main class="app-container">
+
+        <!-- TAB 1: GIS MAP VIEW -->
+        <section id="tab-map" class="tab-content-panel active">
+            
+            <!-- Map Overlay Controls -->
+            <div class="map-control-overlay">
+                <div class="glass-panel search-bar">
+                    <input type="text" id="globalSearch" placeholder="🔍 Поиск (ТК-15.02, Баймагамбетова 16, 5 мкр)...">
+                </div>
+
+                <div class="glass-panel">
+                    <h4 style="font-size: 12px; margin-bottom: 8px; color: var(--text-muted);"><i class="fa fa-layer-group"></i> СЛОИ И ГИДРОРЕЖИМЫ</h4>
+                    <div class="toggle-group">
+                        <label class="toggle-item">
+                            <span>🧪 Сценарное моделирование</span>
+                            <input type="checkbox" id="scenarioToggle">
+                        </label>
+                        <label class="toggle-item">
+                            <span>🚧 Смежные коммуникации</span>
+                            <input type="checkbox" id="utilitiesToggle">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaflet Map Container -->
+            <div id="map"></div>
+
+            <!-- Outage Drawer Slide-Over Panel -->
+            <aside id="outageDrawer" class="outage-drawer"></aside>
+
+            <!-- Pipe Passport Slide-Over Drawer -->
+            <aside id="pipePassportDrawer" class="passport-drawer">
+                <div class="drawer-header">
+                    <h3><i class="fa fa-pipeline"></i> Паспорт участка теплотрассы</h3>
+                    <button class="btn-close-drawer" onclick="document.getElementById('pipePassportDrawer').classList.remove('active')">&times;</button>
+                </div>
+                <div class="drawer-body" id="pipePassportContent"></div>
+            </aside>
+
+            <!-- House Digital Passport Slide-Over Drawer -->
+            <aside id="housePassportDrawer" class="passport-drawer">
+                <div class="drawer-header">
+                    <h3><i class="fa fa-building"></i> Цифровой паспорт дома</h3>
+                    <button class="btn-close-drawer" onclick="document.getElementById('housePassportDrawer').classList.remove('active')">&times;</button>
+                </div>
+                <div class="drawer-body" id="housePassportContent"></div>
+            </aside>
+
+            <!-- Chamber Card & Valve Control Slide-Over Drawer -->
+            <aside id="chamberCardDrawer" class="passport-drawer">
+                <div class="drawer-header">
+                    <h3><i class="fa fa-cubes"></i> Карточка Тепловой Камеры</h3>
+                    <button class="btn-close-drawer" onclick="document.getElementById('chamberCardDrawer').classList.remove('active')">&times;</button>
+                </div>
+                <div class="drawer-body" id="chamberCardContent"></div>
+            </aside>
+        </section>
+
+        <!-- TAB 2: THERMOTRACE MNEMOSCHEMA -->
+        <section id="tab-mnemo" class="tab-content-panel">
+            <div id="mnemoschemaContent"></div>
+        </section>
+
+        <!-- TAB 3: PASSPORTS CATALOG -->
+        <section id="tab-passports" class="tab-content-panel">
+            <div class="content-wrapper" id="passportsContent"></div>
+        </section>
+
+        <!-- TAB 3: ANALYTICS & ANOMALIES -->
+        <section id="tab-analytics" class="tab-content-panel">
+            <div class="content-wrapper" id="analyticsContent"></div>
+        </section>
+
+        <!-- TAB 4: EQUIPMENT & VEHICLES -->
+        <section id="tab-equipment" class="tab-content-panel">
+            <div class="content-wrapper" id="equipmentContent"></div>
+        </section>
+
+        <!-- TAB 5: MOBILE TABLET ARM VIEW -->
+        <section id="tab-tablet" class="tab-content-panel">
+            <div class="content-wrapper">
+                <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h2>📱 АРМ Полевого Инженера (Планшетный интерфейс)</h2>
+                        <p>Внесение дефектов на местности, корректировка топологии GPS, работа в офлайне</p>
+                    </div>
+                    <div>
+                        <span id="tabletNetStatus" class="net-badge online">🟢 ОНЛАЙН (Синхронизировано)</span>
+                        <span class="kpi-badge" style="margin-left:8px;">
+                            Очередь офлайн: <span id="tabletSyncCount" class="kpi-val warning">0</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="admin-grid">
+                    <!-- Tablet Form 1: Defect Registration -->
+                    <div class="admin-card">
+                        <h3><i class="fa fa-clipboard-check"></i> Зафиксировать Дефект / Порыв</h3>
+                        <form onsubmit="event.preventDefault(); window.KTEKFieldTablet.addDefectFromTablet({
+                            source: this.source.value,
+                            tk: this.tk.value,
+                            address: this.address.value,
+                            defectType: this.defectType.value,
+                            priority: this.priority.value,
+                            note: this.note.value
+                        }); this.reset();">
+                            <div class="form-group">
+                                <label>Источник / Район:</label>
+                                <select name="source">
+                                    <option value="ТЭЦ-1">ТЭЦ-1 (Центр)</option>
+                                    <option value="ТЭЦ-2">ТЭЦ-2 (КСК)</option>
+                                    <option value="РК-3">РК-3 (КЖБИ)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Идентификатор ТК / ВУ:</label>
+                                <input type="text" name="tk" placeholder="ТК15.02" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Адрес объекта:</label>
+                                <input type="text" name="address" placeholder="Ул. Баймагамбетова 16" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Характер дефекта:</label>
+                                <input type="text" name="defectType" placeholder="Порыв тр ф89 в подвале, течь сальника" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Критичность (1-5):</label>
+                                <select name="priority">
+                                    <option value="5">5 - Критический Аварийный Порыв 🚨</option>
+                                    <option value="4">4 - Высокая приоритетность</option>
+                                    <option value="3" selected>3 - Средняя приоритетность</option>
+                                    <option value="2">2 - Низкая приоритетность</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Примечание / Фотоматериал:</label>
+                                <input type="text" name="note" placeholder="Требуется экскаватор, копать 2м">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top:10px;">
+                                📲 Сохранить дефект в АРМ
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Tablet Form 2: GIS Topology Field Corrector -->
+                    <div class="admin-card">
+                        <h3><i class="fa fa-location-dot"></i> Корректировка Топологии Сети на Местности</h3>
+                        <form onsubmit="event.preventDefault(); window.KTEKFieldTablet.addChamberFromTablet({
+                            id: this.id.value,
+                            name: this.name.value,
+                            lat: this.lat.value,
+                            lng: this.lng.value,
+                            source: this.source.value
+                        }); this.reset();">
+                            <div class="form-group">
+                                <label>Идентификатор нового узла:</label>
+                                <input type="text" name="id" placeholder="ТК24.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Наименование / Описание:</label>
+                                <input type="text" name="name" placeholder="Новая камерная арматура (Юбилейный)" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Широта (GPS Lat):</label>
+                                <input type="text" name="lat" value="53.198" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Долгота (GPS Lng):</label>
+                                <input type="text" name="lng" value="63.602" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Привязка к источнику:</label>
+                                <select name="source">
+                                    <option value="RK3">РК-3</option>
+                                    <option value="TETs1">ТЭЦ-1</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-secondary" style="margin-top:10px;">
+                                📍 Нанести узел на карту КТЭК
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: PREDICTIVE ANALYTICS -->
+        <section id="tab-predictive" class="tab-content-panel">
+            <div class="content-wrapper" id="predictiveContent"></div>
+        </section>
+
+    </main>
+
+    <!-- Notification Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="data_loader.js"></script>
+    <script src="topology.js"></script>
+    <script src="scada.js"></script>
+    <script src="field_tablet.js"></script>
+    <script src="admin_nocode.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+
