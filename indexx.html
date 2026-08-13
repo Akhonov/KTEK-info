@@ -170,6 +170,26 @@
             border-radius: 50%;
             box-shadow: 0 0 8px rgba(234, 179, 8, 0.9);
         }
+    
+        /* Стили для подключенных домов */
+        .connected-house-glow {
+            animation: house-glow 1.5s infinite alternate;
+        }
+        @keyframes house-glow {
+            from { box-shadow: 0 0 4px #38bdf8; }
+            to { box-shadow: 0 0 16px #38bdf8, 0 0 24px #38bdf8; }
+        }
+
+        /* Индикатор режима привязки */
+        .snap-target-source {
+            animation: snap-pulse 1.2s infinite;
+        }
+        @keyframes snap-pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 4px #eab308); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 16px #eab308); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 4px #eab308); }
+        }
+
     </style>
 </head>
 
@@ -926,6 +946,179 @@
             });
         }
 
+        // ── ХРАНИЛИЩЕ ПОДКЛЮЧЕННЫХ ДОМОВ И СНАППИНГА ──
+        let drawingDestinationInfo = { id: null, name: "Конечный узел сети", lat: null, lng: null };
+        let selectedHousesForPipe = new Map(); // key: houseKey -> { house, marker }
+        let isSelectingHousesMode = false;
+        let connectedHouseHighlightGroup = null;
+
+        // Расчет расстояния от точки до отрезка в метрах
+        function getDistanceToSegmentM(p, v, w) {
+            const pPt = map.latLngToLayerPoint(p);
+            const vPt = map.latLngToLayerPoint(v);
+            const wPt = map.latLngToLayerPoint(w);
+            const l2 = vPt.distanceTo(wPt) ** 2;
+            if (l2 === 0) return map.distance(p, v);
+            let t = ((pPt.x - vPt.x) * (wPt.x - vPt.x) + (pPt.y - vPt.y) * (wPt.y - vPt.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            const projPt = L.point(vPt.x + t * (wPt.x - vPt.x), vPt.y + t * (wPt.y - vPt.y));
+            const projLatLng = map.layerPointToLatLng(projPt);
+            return map.distance(p, projLatLng);
+        }
+
+        // Автозахват домов вдоль проложенной полилинии
+        window.autoCaptureHousesAlongRoute = function(radiusM = 150) {
+            if (currentDrawnPoints.length < 2) {
+                alert("Сначала проложите линию трассы на карте!");
+                return;
+            }
+            if (!window.KTEKData || !window.KTEKData.houses) return;
+
+            selectedHousesForPipe.clear();
+            if (connectedHouseHighlightGroup) connectedHouseHighlightGroup.clearLayers();
+
+            window.KTEKData.houses.forEach(h => {
+                if (!h.lat || !h.lng) return;
+                const hLatLng = [h.lat, h.lng];
+                let minDistance = Infinity;
+
+                for (let i = 0; i < currentDrawnPoints.length - 1; i++) {
+                    const d = getDistanceToSegmentM(hLatLng, currentDrawnPoints[i], currentDrawnPoints[i + 1]);
+                    if (d < minDistance) minDistance = d;
+                }
+
+                if (minDistance <= radiusM) {
+                    const houseKey = (h.street || '') + '_' + (h.house || '');
+                    selectedHousesForPipe.set(houseKey, {
+                        street: h.street,
+                        house: h.house,
+                        flats: h.flats || 1,
+                        floors: h.floors || 1,
+                        lat: h.lat,
+                        lng: h.lng
+                    });
+                }
+            });
+
+            renderConnectedHousesHighlights();
+            updateDrawingStatsUI();
+        };
+
+        window.toggleHouseSelectionMode = function() {
+            isSelectingHousesMode = !isSelectingHousesMode;
+            const btn = document.getElementById('btnToggleHousePicker');
+            if (btn) {
+                btn.className = isSelectingHousesMode
+                    ? "px-2 py-0.5 bg-purple-600 text-white font-bold border border-purple-400 rounded flex items-center gap-1 animate-pulse"
+                    : "px-2 py-0.5 bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-700/60 rounded flex items-center gap-1";
+            }
+            if (isSelectingHousesMode) {
+                alert("Режим выбора домов активен! Кликайте по зеленым точкам домов на карте, чтобы подключить их к этой трассе.");
+            }
+        };
+
+        function toggleHouseSelection(h) {
+            const houseKey = (h.street || '') + '_' + (h.house || '');
+            if (selectedHousesForPipe.has(houseKey)) {
+                selectedHousesForPipe.delete(houseKey);
+            } else {
+                selectedHousesForPipe.set(houseKey, {
+                    street: h.street,
+                    house: h.house,
+                    flats: h.flats || 1,
+                    floors: h.floors || 1,
+                    lat: h.lat,
+                    lng: h.lng
+                });
+            }
+            renderConnectedHousesHighlights();
+            updateDrawingStatsUI();
+        }
+
+        function renderConnectedHousesHighlights() {
+            if (!connectedHouseHighlightGroup) {
+                connectedHouseHighlightGroup = L.layerGroup().addTo(map);
+            }
+            connectedHouseHighlightGroup.clearLayers();
+
+            selectedHousesForPipe.forEach(h => {
+                const glowCircle = L.circleMarker([h.lat, h.lng], {
+                    radius: 7,
+                    color: '#c084fc',
+                    fillColor: '#a855f7',
+                    fillOpacity: 0.85,
+                    weight: 2
+                });
+                glowCircle.bindTooltip(`🏠 ул. ${h.street}, д. ${h.house} (${h.flats} кв.)`, { direction: 'top' });
+                connectedHouseHighlightGroup.addLayer(glowCircle);
+            });
+        }
+
+        function updateDrawingStatsUI() {
+            const badge = document.getElementById('selectedHousesBadge');
+            if (badge) badge.textContent = selectedHousesForPipe.size;
+
+            const totalLength = calculatePolylineLengthM(currentDrawnPoints);
+            let totalFlats = 0;
+            selectedHousesForPipe.forEach(h => totalFlats += (h.flats || 1));
+            const totalLoad = (totalFlats * 0.0035).toFixed(2);
+
+            const statsEl = document.getElementById('drawingStats');
+            if (statsEl) {
+                statsEl.innerHTML = `Точек: <b>${currentDrawnPoints.length}</b> | Длина: <b class="text-emerald-400">${totalLength} м</b> | Домов: <b class="text-purple-300">${selectedHousesForPipe.size}</b> (${totalFlats} кв., ${totalLoad} Гкал/ч)`;
+            }
+
+            const hCountLabel = document.getElementById('pipeHousesCountLabel');
+            if (hCountLabel) hCountLabel.textContent = `${selectedHousesForPipe.size} зданий (${totalFlats} кв.)`;
+
+            const loadLabel = document.getElementById('pipeLoadLabel');
+            if (loadLabel) loadLabel.textContent = `${totalLoad} Гкал/ч`;
+
+            const tagList = document.getElementById('connectedHousesTagList');
+            if (tagList) {
+                if (selectedHousesForPipe.size === 0) {
+                    tagList.innerHTML = '<span class="text-slate-500">Нет выбранных домов</span>';
+                } else {
+                    let tags = [];
+                    selectedHousesForPipe.forEach(h => {
+                        tags.push(`<span class="bg-purple-950 text-purple-200 px-1.5 py-0.5 rounded border border-purple-800/60">${h.street} ${h.house}</span>`);
+                    });
+                    tagList.innerHTML = tags.slice(0, 15).join('') + (tags.length > 15 ? `<span class="text-slate-400">+ ещё ${tags.length - 15}</span>` : '');
+                }
+            }
+        }
+
+        // ── ОБРАБОТКА КЛИКА НА ИСТОЧНИК / ТЭЦ В РЕЖИМЕ РИСОВАНИЯ (SNAP TO SOURCE) ──
+        window.handleSourceClickInDrawing = function(id, name, lat, lng) {
+            if (!isDrawingPipe) {
+                startPipeDrawingFromSource(id, name, lat, lng);
+                return;
+            }
+
+            // Если это старт трассы
+            if (currentDrawnPoints.length === 0) {
+                drawingSourceInfo = { id, name, lat, lng };
+                currentDrawnPoints = [[lat, lng]];
+                document.getElementById('drawingConnectionBadge').textContent = `Старт: ${name}`;
+                document.getElementById('drawingConnectionBadge').className = "text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-700/50";
+                renderDrawingPreview();
+                return;
+            }
+
+            // Если трасса уже строится и нажали на другой (или тот же) котел -> ЗАВЕРШАЕМ В ЭТОЙ ТОЧКЕ!
+            drawingDestinationInfo = { id, name, lat, lng };
+            currentDrawnPoints.push([lat, lng]);
+            document.getElementById('drawingConnectionBadge').textContent = `${drawingSourceInfo.name} ➔ ${name}`;
+            document.getElementById('drawingConnectionBadge').className = "text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-700/50";
+
+            renderDrawingPreview();
+            autoCaptureHousesAlongRoute(150);
+
+            setTimeout(() => {
+                finishPipeDrawing();
+            }, 300);
+        };
+
         // ── 3. ИНСТРУМЕНТ ИНТЕРАКТИВНОГО РИСОВАНИЯ ТРАССЫ ТРУБ ✏️ ──
         window.startPipeDrawingFromSource = function(id, name, lat, lng) {
             map.closePopup();
@@ -1387,6 +1580,7 @@
         }
 
         function renderCustomPipelines(pipelines) {
+            customPipeLinesData = pipelines;
             Object.values(customPipeLines).forEach(p => mapLayers.customPipelines && mapLayers.customPipelines.removeLayer(p));
             customPipeLines = {};
 
@@ -1420,6 +1614,27 @@
                 }
             });
         }
+
+        
+        window.highlightPipelineHouses = function(pipeId) {
+            const p = customPipeLinesData ? customPipeLinesData[pipeId] : null;
+            if (!p || !p.connectedHouses || !p.connectedHouses.length) return;
+            if (connectedHouseHighlightGroup) connectedHouseHighlightGroup.clearLayers();
+            else connectedHouseHighlightGroup = L.layerGroup().addTo(map);
+
+            p.connectedHouses.forEach(h => {
+                const glowCircle = L.circleMarker([h.lat, h.lng], {
+                    radius: 8,
+                    color: '#fbbf24',
+                    fillColor: '#f59e0b',
+                    fillOpacity: 0.9,
+                    weight: 2
+                });
+                glowCircle.bindTooltip(`🔥 Запитано от ${p.name}: ул. ${h.street}, д. ${h.house}`, { direction: 'top' });
+                connectedHouseHighlightGroup.addLayer(glowCircle);
+            });
+        };
+        let customPipeLinesData = {};
 
         // ── 7. UI MODAL UTILS ──
         window.openAddIncidentModal = () => openModal('addIncidentModal');
