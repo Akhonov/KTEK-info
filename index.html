@@ -33,9 +33,299 @@
             z-index: 1000;
             top: 16px;
             right: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
         }
 
         .map-style-control { position: relative; }
+
+        .address-search { position: relative; }
+
+        .source-editor { position: relative; }
+
+        .source-edit-toggle {
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(28, 39, 49, .12);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .95);
+            box-shadow: 0 3px 14px rgba(27, 39, 51, .18);
+            color: #263238;
+            cursor: pointer;
+            transition: transform .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease;
+        }
+
+        .source-edit-toggle:hover,
+        .source-editor.is-open .source-edit-toggle,
+        body.is-editing-sources .source-edit-toggle {
+            transform: translateY(-1px);
+            background: #ff6b24;
+            color: #fff;
+            box-shadow: 0 7px 20px rgba(255, 107, 36, .34);
+        }
+
+        .source-edit-toggle svg { width: 22px; height: 22px; }
+
+        .source-edit-panel {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            width: min(330px, calc(100vw - 24px));
+            padding: 16px;
+            border: 1px solid rgba(28, 39, 49, .1);
+            border-radius: 17px;
+            background: rgba(255, 255, 255, .98);
+            box-shadow: 0 13px 38px rgba(27, 39, 51, .25);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px) scale(.97);
+            transform-origin: top right;
+            transition: opacity .16s ease, transform .16s ease, visibility .16s;
+        }
+
+        .source-editor.is-open .source-edit-panel {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .source-edit-panel h2 { margin: 0 0 7px; color: #172229; font-size: 16px; }
+        .source-edit-panel p { margin: 0 0 13px; color: #68777e; font-size: 12px; line-height: 1.45; }
+
+        .source-edit-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 9px 11px;
+            border-radius: 10px;
+            background: #f1f4f5;
+            color: #4b5a61;
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .source-edit-status::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #a7b2b7;
+        }
+
+        body.is-editing-sources .source-edit-status { background: #fff1e9; color: #c34c11; }
+        body.is-editing-sources .source-edit-status::before { background: #ff6b24; box-shadow: 0 0 0 4px rgba(255,107,36,.15); }
+
+        .source-edit-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .source-edit-action {
+            min-height: 39px;
+            padding: 8px 10px;
+            border: 0;
+            border-radius: 10px;
+            background: #edf1f3;
+            color: #34434a;
+            cursor: pointer;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .source-edit-action.primary { grid-column: 1 / -1; background: #ff6b24; color: #fff; }
+        .source-edit-action:hover { filter: brightness(.96); }
+
+        .heat-source-delete {
+            width: 100%;
+            margin-top: 12px;
+            padding: 11px 13px;
+            border: 0;
+            border-radius: 10px;
+            background: #d92d20;
+            color: #fff;
+            cursor: pointer;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 850;
+            box-shadow: 0 4px 12px rgba(217, 45, 32, .22);
+        }
+
+        .heat-source-delete:hover { background: #b42318; }
+
+        body.is-editing-sources .heat-source-marker { cursor: grab !important; }
+        body.is-editing-sources .leaflet-drag-target .heat-source-marker { cursor: grabbing !important; }
+        body.dark .source-edit-toggle { background: rgba(37, 46, 51, .95); color: #fff; border-color: #46545b; }
+        body.dark .source-edit-panel { background: rgba(37, 46, 51, .98); border-color: #46545b; }
+        body.dark .source-edit-panel h2 { color: #fff; }
+        body.dark .source-edit-panel p { color: #b7c1c6; }
+
+        .search-toggle {
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(28, 39, 49, .12);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .95);
+            box-shadow: 0 3px 14px rgba(27, 39, 51, .18);
+            color: #263238;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+        }
+
+        .search-toggle:hover,
+        .address-search.is-open .search-toggle {
+            transform: translateY(-1px);
+            background: #1677ff;
+            color: #fff;
+            box-shadow: 0 7px 20px rgba(22, 119, 255, .32);
+        }
+
+        .search-toggle svg { width: 21px; height: 21px; }
+
+        .search-panel {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            width: min(370px, calc(100vw - 24px));
+            overflow: hidden;
+            border: 1px solid rgba(28, 39, 49, .1);
+            border-radius: 17px;
+            background: rgba(255, 255, 255, .98);
+            box-shadow: 0 13px 38px rgba(27, 39, 51, .25);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px) scale(.97);
+            transform-origin: top right;
+            transition: opacity .16s ease, transform .16s ease, visibility .16s;
+        }
+
+        .address-search.is-open .search-panel {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .search-panel__head {
+            padding: 14px 14px 10px;
+            background: linear-gradient(135deg, #1677ff, #0655c9);
+        }
+
+        .search-panel__title {
+            display: block;
+            margin-bottom: 9px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .search-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 11px;
+            border-radius: 11px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 42, 105, .17);
+        }
+
+        .search-input-wrap svg { width: 16px; height: 16px; color: #78909c; flex: 0 0 auto; }
+
+        .address-search-input {
+            width: 100%;
+            height: 42px;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: #172229;
+            font: inherit;
+            font-size: 14px;
+        }
+
+        .address-search-input::placeholder { color: #9aa7ad; }
+
+        .search-results {
+            max-height: min(420px, 55vh);
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .search-hint {
+            margin: 0;
+            padding: 17px 13px;
+            color: #839198;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .search-result {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 36px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 0;
+            border-radius: 11px;
+            background: transparent;
+            color: #263238;
+            cursor: pointer;
+            font: inherit;
+            text-align: left;
+        }
+
+        .search-result:hover,
+        .search-result.is-active { background: #edf5ff; }
+
+        .search-result__icon {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            background: #e5f0ff;
+            color: #1677ff;
+            font-size: 17px;
+        }
+
+        .search-result__address {
+            display: block;
+            color: #1d2a31;
+            font-size: 13px;
+            font-weight: 750;
+            line-height: 1.3;
+        }
+
+        .search-result__meta {
+            display: block;
+            margin-top: 3px;
+            color: #8a989f;
+            font-size: 10px;
+        }
+
+        .search-result__arrow { color: #9ba8ae; font-size: 18px; }
+
+        .search-location-marker {
+            border: 0 !important;
+            background: transparent !important;
+        }
+
+        .search-location-pin {
+            width: 30px;
+            height: 30px;
+            display: grid;
+            place-items: center;
+            border: 3px solid #fff;
+            border-radius: 50% 50% 50% 8px;
+            background: #1677ff;
+            color: #fff;
+            box-shadow: 0 4px 13px rgba(0, 65, 160, .5);
+            transform: rotate(-45deg);
+        }
+
+        .search-location-pin span { transform: rotate(45deg); font-size: 14px; }
 
         .map-style-toggle {
             width: 46px;
@@ -280,6 +570,78 @@
             transform: translate(-50%, 0);
         }
 
+        .dependency-summary {
+            position: fixed;
+            z-index: 840;
+            top: 18px;
+            left: 50%;
+            max-width: min(460px, 72vw);
+            padding: 8px 13px;
+            border: 1px solid rgba(255, 255, 255, .75);
+            border-radius: 10px;
+            background: rgba(22, 34, 39, .9);
+            color: #fff;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, .24);
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+            transform: translate(-50%, -8px);
+            transition: opacity .14s ease, transform .14s ease;
+            font-size: 12px;
+            font-weight: 750;
+        }
+
+        .dependency-summary.is-visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .dependent-house-marker {
+            border: 0 !important;
+            background: transparent !important;
+        }
+
+        .dependent-house-icon {
+            position: relative;
+            width: 18px;
+            height: 15px;
+            display: grid;
+            place-items: center;
+            margin-top: 5px;
+            border: 2px solid #fff;
+            border-radius: 3px;
+            background: #ffb300;
+            color: #3d2a00;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .38);
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .dependent-house-icon::before {
+            content: "";
+            position: absolute;
+            top: -7px;
+            left: 2px;
+            width: 10px;
+            height: 10px;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            background: #ffb300;
+            transform: rotate(45deg);
+        }
+
+        .dependent-house-icon span { position: relative; z-index: 1; }
+
+        .dependent-building {
+            filter: drop-shadow(0 2px 4px rgba(116, 75, 0, .48));
+            transition: fill-opacity .15s ease, stroke-width .15s ease;
+        }
+
+        .dependent-building:hover {
+            fill-opacity: .9 !important;
+            stroke-width: 4px !important;
+        }
+
         .map-marker {
             border: 0 !important;
             background: transparent !important;
@@ -334,6 +696,97 @@
         .map-marker.is-aimed .map-marker__outer {
             outline: 3px solid rgba(0, 168, 107, .82);
             outline-offset: 3px;
+        }
+
+        .heat-source-marker {
+            border: 0 !important;
+            background: transparent !important;
+            overflow: visible !important;
+        }
+
+        .heat-source-marker__pin {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            border: 3px solid #fff;
+            border-radius: 15px;
+            background: linear-gradient(145deg, var(--source-color), color-mix(in srgb, var(--source-color) 68%, #111));
+            color: #fff;
+            box-shadow: 0 7px 18px rgba(15, 23, 42, .42), 0 0 0 5px color-mix(in srgb, var(--source-color) 24%, transparent);
+            transform: rotate(45deg);
+            transition: transform .16s ease, box-shadow .16s ease;
+        }
+
+        .heat-source-marker__pin::after {
+            content: "";
+            position: absolute;
+            inset: -9px;
+            border: 2px solid color-mix(in srgb, var(--source-color) 72%, white);
+            border-radius: 20px;
+            opacity: .58;
+            animation: sourcePulse 2.2s ease-out infinite;
+        }
+
+        .heat-source-marker.is-approximate .heat-source-marker__pin::after { border-style: dashed; }
+
+        .heat-source-marker__icon {
+            width: 27px;
+            height: 27px;
+            display: grid;
+            place-items: center;
+            transform: rotate(-45deg);
+        }
+
+        .heat-source-marker__icon svg { width: 27px; height: 27px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.28)); }
+
+        .heat-source-marker__badge {
+            position: absolute;
+            top: -11px;
+            right: -12px;
+            min-width: 19px;
+            height: 19px;
+            display: grid;
+            place-items: center;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            background: #17202a;
+            color: #fff;
+            font: 900 11px/1 Arial, sans-serif;
+            transform: rotate(-45deg);
+        }
+
+        .heat-source-marker__label {
+            position: absolute;
+            top: 58px;
+            left: 24px;
+            padding: 4px 8px;
+            border: 1px solid rgba(255,255,255,.7);
+            border-radius: 8px;
+            background: rgba(20, 27, 34, .9);
+            color: #fff;
+            box-shadow: 0 3px 10px rgba(0,0,0,.28);
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.1;
+            white-space: nowrap;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+
+        .heat-source-marker:hover .heat-source-marker__pin,
+        .heat-source-marker.is-selected .heat-source-marker__pin,
+        .heat-source-marker.is-aimed .heat-source-marker__pin {
+            transform: rotate(45deg) scale(1.16);
+            box-shadow: 0 9px 24px rgba(15, 23, 42, .5), 0 0 0 7px color-mix(in srgb, var(--source-color) 32%, transparent);
+        }
+
+        .heat-source-marker.is-aimed .heat-source-marker__pin { outline: 3px solid #00d084; outline-offset: 5px; }
+
+        @keyframes sourcePulse {
+            0% { transform: scale(.82); opacity: .72; }
+            80%, 100% { transform: scale(1.32); opacity: 0; }
         }
 
         .leaflet-tooltip.object-tooltip {
@@ -547,6 +1000,11 @@
         body.dark .map-style-menu { background: rgba(37, 46, 51, .98); border-color: #46545b; }
         body.dark .map-style-option { color: #fff; }
         body.dark .map-style-option:hover { background: #303b40; }
+        body.dark .search-toggle { background: rgba(37, 46, 51, .95); color: #fff; border-color: #46545b; }
+        body.dark .search-panel { background: rgba(37, 46, 51, .98); border-color: #46545b; }
+        body.dark .search-result { color: #fff; }
+        body.dark .search-result:hover, body.dark .search-result.is-active { background: #303f48; }
+        body.dark .search-result__address { color: #fff; }
         body.dark .defect-card { background: #293237; border-color: #3b484e; }
         body.dark .defect-card__title, body.dark .defect-field__value { color: #edf2f4; }
         body.dark .impact-houses { color: #d9e1e4; }
@@ -556,6 +1014,8 @@
         @media (max-width: 600px) {
             .map-toolbar { top: 10px; right: 10px; }
             .map-style-toggle { width: 43px; height: 43px; }
+            .search-toggle { width: 43px; height: 43px; }
+            .search-panel { top: 50px; right: -53px; }
             .map-style-menu { top: 50px; width: 220px; }
             .map-counter { right: 10px; bottom: 12px; }
             .object-card { width: 100vw; }
@@ -570,8 +1030,47 @@
         <span class="map-crosshair__dot"></span>
     </div>
     <div class="crosshair-target" id="crosshairTarget" aria-live="polite"></div>
+    <div class="dependency-summary" id="dependencySummary" aria-live="polite"></div>
 
     <div class="map-toolbar">
+        <div class="source-editor" id="sourceEditor">
+            <button class="source-edit-toggle" id="sourceEditToggle" type="button" aria-label="Переместить котельные" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2v20M2 12h20"></path><path d="m8 6 4-4 4 4M8 18l4 4 4-4M6 8l-4 4 4 4M18 8l4 4-4 4"></path>
+                </svg>
+            </button>
+            <section class="source-edit-panel" id="sourceEditPanel" aria-label="Редактор котельных">
+                <h2>Расстановка котельных</h2>
+                <p>Включите режим и перетаскивайте значки. Чтобы удалить котельную, нажмите на неё и выберите красную кнопку в справке.</p>
+                <div class="source-edit-status" id="sourceEditStatus">Режим перемещения выключен</div>
+                <div class="source-edit-actions">
+                    <button class="source-edit-action primary" id="sourceEditMode" type="button">Включить перемещение</button>
+                    <button class="source-edit-action" id="sourceExport" type="button">Скачать координаты</button>
+                    <button class="source-edit-action" id="sourceReset" type="button">Сбросить правки</button>
+                </div>
+            </section>
+        </div>
+        <div class="address-search" id="addressSearch">
+            <button class="search-toggle" id="searchToggle" type="button" aria-label="Поиск по адресу" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                    <circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.5 15.5 5 5"></path>
+                </svg>
+            </button>
+            <section class="search-panel" id="searchPanel" aria-label="Поиск домов">
+                <div class="search-panel__head">
+                    <span class="search-panel__title">Найти дом на карте</span>
+                    <label class="search-input-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.5 15.5 5 5"></path>
+                        </svg>
+                        <input class="address-search-input" id="addressSearchInput" type="search" autocomplete="off" placeholder="Например: Абая 24" aria-label="Введите адрес">
+                    </label>
+                </div>
+                <div class="search-results" id="searchResults">
+                    <p class="search-hint">Введите улицу и номер дома.<br>Доступно 4025 реальных адресов.</p>
+                </div>
+            </section>
+        </div>
         <div class="map-style-control" id="mapStyleControl">
             <button class="map-style-toggle" id="mapStyleToggle" type="button" aria-label="Выбрать вид карты" aria-expanded="false">
                 <span class="layers-icon" aria-hidden="true"><span></span><span></span><span></span></span>
@@ -624,6 +1123,11 @@
                 <span class="info-label">координаты</span>
                 <p class="info-value" id="cardCoordinates"></p>
             </section>
+            <section class="info-row" id="heatSourceDetails" hidden>
+                <span class="info-label">адрес и точность привязки</span>
+                <p class="info-value" id="cardHeatSourceDetails"></p>
+                <button class="heat-source-delete" id="heatSourceDelete" type="button" hidden>Удалить котельную с карты</button>
+            </section>
             <section class="info-row" id="sourceLinkRow" hidden>
                 <span class="info-label">материалы</span>
                 <a class="source-link" id="sourceLink" href="#" target="_blank" rel="noopener noreferrer">Открыть прикреплённый материал ↗</a>
@@ -672,9 +1176,34 @@
         let activeTiles = tileLayers[activeStyle].addTo(map);
         let selectedLayer = null;
         let aimedTarget = null;
+        let hoveredTarget = null;
+        let visibleDependencyTarget = null;
+        let dependencyHideTimer = null;
         let aimFrame = null;
+        let addressDatabase = [];
+        let visibleSearchResults = [];
+        let activeSearchResult = -1;
+        let dependentHouseCatalog = new Map();
+        let sourceEditModeEnabled = false;
+        const SOURCE_POSITIONS_KEY = "ktek_heat_source_positions_v2";
+        const DELETED_SOURCES_KEY = "ktek_deleted_heat_sources_v2";
+        const heatSourceEntries = new Map();
+        let sourcePositionOverrides = {};
+        let deletedSourceIds = new Set();
+        let allHeatSources = [];
+        let activeHeatSourceId = null;
+        let mapObjectCounts = { points: 0, lines: 0 };
+        try {
+            sourcePositionOverrides = JSON.parse(localStorage.getItem(SOURCE_POSITIONS_KEY) || "{}") || {};
+            deletedSourceIds = new Set(JSON.parse(localStorage.getItem(DELETED_SOURCES_KEY) || "[]") || []);
+        } catch (error) {
+            console.warn("Не удалось прочитать сохранённые позиции котельных:", error);
+        }
         const selectableObjects = [];
         const networkLayer = L.layerGroup().addTo(map);
+        const dependencyLayer = L.layerGroup().addTo(map);
+        const searchLocationLayer = L.layerGroup().addTo(map);
+        const heatSourcesLayer = L.layerGroup().addTo(map);
         const objectsLayer = L.layerGroup().addTo(map);
 
         const card = document.getElementById("objectCard");
@@ -685,6 +1214,9 @@
         const cardFolder = document.getElementById("cardFolder");
         const cardType = document.getElementById("cardType");
         const cardCoordinates = document.getElementById("cardCoordinates");
+        const heatSourceDetails = document.getElementById("heatSourceDetails");
+        const cardHeatSourceDetails = document.getElementById("cardHeatSourceDetails");
+        const heatSourceDelete = document.getElementById("heatSourceDelete");
         const sourceLinkRow = document.getElementById("sourceLinkRow");
         const sourceLink = document.getElementById("sourceLink");
         const defectSummary = document.getElementById("defectSummary");
@@ -692,9 +1224,247 @@
         const mapCounter = document.getElementById("mapCounter");
         const crosshair = document.querySelector(".map-crosshair");
         const crosshairTarget = document.getElementById("crosshairTarget");
+        const dependencySummary = document.getElementById("dependencySummary");
+        const addressSearch = document.getElementById("addressSearch");
+        const searchToggle = document.getElementById("searchToggle");
+        const searchPanel = document.getElementById("searchPanel");
+        const addressSearchInput = document.getElementById("addressSearchInput");
+        const searchResults = document.getElementById("searchResults");
+        const sourceEditor = document.getElementById("sourceEditor");
+        const sourceEditToggle = document.getElementById("sourceEditToggle");
+        const sourceEditPanel = document.getElementById("sourceEditPanel");
+        const sourceEditStatus = document.getElementById("sourceEditStatus");
+        const sourceEditMode = document.getElementById("sourceEditMode");
+        const sourceExport = document.getElementById("sourceExport");
+        const sourceReset = document.getElementById("sourceReset");
 
         function safeColor(value, fallback = "#455A64") {
             return /^#[0-9a-f]{6}$/i.test(value || "") ? value : fallback;
+        }
+
+        function normalizeSearch(value) {
+            return String(value || "")
+                .toLocaleLowerCase("ru-RU")
+                .replace(/ё/g, "е")
+                .replace(/[^a-zа-яәіңғүұқөһ0-9]+/gi, "")
+                .trim();
+        }
+
+        function closeAddressSearch() {
+            addressSearch.classList.remove("is-open");
+            searchToggle.setAttribute("aria-expanded", "false");
+        }
+
+        function closeSourceEditor() {
+            sourceEditor.classList.remove("is-open");
+            sourceEditToggle.setAttribute("aria-expanded", "false");
+        }
+
+        function persistSourcePositions() {
+            try {
+                localStorage.setItem(SOURCE_POSITIONS_KEY, JSON.stringify(sourcePositionOverrides));
+                localStorage.setItem(DELETED_SOURCES_KEY, JSON.stringify([...deletedSourceIds]));
+            } catch (error) {
+                console.warn("Не удалось сохранить позиции котельных:", error);
+            }
+            updateSourceEditStatus();
+        }
+
+        function updateSourceEditStatus() {
+            const count = Object.keys(sourcePositionOverrides).length;
+            const deletedCount = deletedSourceIds.size;
+            sourceEditStatus.textContent = sourceEditModeEnabled
+                ? `Редактор включён · перемещено: ${count} · удалено: ${deletedCount}`
+                : `Редактор выключен · перемещено: ${count} · удалено: ${deletedCount}`;
+            sourceEditMode.textContent = sourceEditModeEnabled ? "Завершить перемещение" : "Включить перемещение";
+        }
+
+        function updateMapCounter() {
+            const visibleSources = allHeatSources.length - deletedSourceIds.size;
+            mapCounter.textContent = `${mapObjectCounts.points} объектов · ${mapObjectCounts.lines} участков · ${visibleSources} теплоисточников`;
+        }
+
+        function setSourceEditMode(enabled) {
+            sourceEditModeEnabled = Boolean(enabled);
+            document.body.classList.toggle("is-editing-sources", sourceEditModeEnabled);
+            heatSourceDelete.hidden = !(sourceEditModeEnabled && activeHeatSourceId);
+            heatSourceEntries.forEach(({ marker }) => {
+                if (!marker.dragging) return;
+                if (sourceEditModeEnabled) marker.dragging.enable();
+                else marker.dragging.disable();
+            });
+            updateSourceEditStatus();
+        }
+
+        function exportSourcePositions() {
+            const positions = allHeatSources.map(source => {
+                const entry = heatSourceEntries.get(source.id);
+                const position = entry?.marker.getLatLng() || L.latLng(source.lat, source.lng);
+                return {
+                    id: source.id,
+                    name: source.name,
+                    lat: Number(position.lat.toFixed(7)),
+                    lng: Number(position.lng.toFixed(7)),
+                    manuallyMoved: Boolean(sourcePositionOverrides[source.id]),
+                    deleted: deletedSourceIds.has(source.id)
+                };
+            });
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                movedObjects: positions.filter(item => item.manuallyMoved).length,
+                deletedObjects: positions.filter(item => item.deleted).length,
+                heatSources: positions
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "ktek_heat_sources_positions.json";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function resetSourcePositions() {
+            sourcePositionOverrides = {};
+            deletedSourceIds = new Set();
+            try {
+                localStorage.removeItem(SOURCE_POSITIONS_KEY);
+                localStorage.removeItem(DELETED_SOURCES_KEY);
+            } catch (error) {
+                console.warn("Не удалось сбросить позиции котельных:", error);
+            }
+            window.location.reload();
+        }
+
+        function deleteActiveHeatSource() {
+            const entry = heatSourceEntries.get(activeHeatSourceId);
+            if (!entry) return;
+            if (!window.confirm(`Удалить «${entry.source.name}» с карты?`)) return;
+            deletedSourceIds.add(entry.source.id);
+            heatSourcesLayer.removeLayer(entry.marker);
+            const targetIndex = selectableObjects.indexOf(entry.target);
+            if (targetIndex >= 0) selectableObjects.splice(targetIndex, 1);
+            if (aimedTarget === entry.target) {
+                clearAimHighlight(aimedTarget);
+                aimedTarget = null;
+            }
+            activeHeatSourceId = null;
+            persistSourcePositions();
+            updateMapCounter();
+            closeCard();
+            scheduleCrosshairUpdate();
+        }
+
+        function renderAddressResults(query) {
+            const normalizedQuery = normalizeSearch(query);
+            searchResults.replaceChildren();
+            visibleSearchResults = [];
+            activeSearchResult = -1;
+
+            if (normalizedQuery.length < 2) {
+                const hint = document.createElement("p");
+                hint.className = "search-hint";
+                hint.textContent = `Введите улицу и номер дома. Доступно ${addressDatabase.length} реальных адресов.`;
+                searchResults.appendChild(hint);
+                return;
+            }
+
+            const seen = new Set();
+            visibleSearchResults = addressDatabase
+                .map(house => {
+                    const addressKey = normalizeSearch(house.address);
+                    const tkKey = normalizeSearch(house.tk);
+                    let score = -1;
+                    if (addressKey === normalizedQuery) score = 100;
+                    else if (addressKey.startsWith(normalizedQuery)) score = 80;
+                    else if (addressKey.includes(normalizedQuery)) score = 60;
+                    else {
+                        const tokens = normalizedQuery.match(/[a-zа-яәіңғүұқөһ]+|\d+/gi) || [];
+                        if (tokens.length && tokens.every(token => addressKey.includes(token) || tkKey.includes(token))) {
+                            score = 40 + tokens.length;
+                        }
+                    }
+                    return { house, score, addressKey };
+                })
+                .filter(item => item.score >= 0)
+                .sort((first, second) => second.score - first.score || first.house.address.localeCompare(second.house.address, "ru"))
+                .filter(item => {
+                    const key = `${item.addressKey}|${item.house.lat}|${item.house.lng}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                })
+                .slice(0, 10)
+                .map(item => item.house);
+
+            if (!visibleSearchResults.length) {
+                const empty = document.createElement("p");
+                empty.className = "search-hint";
+                empty.textContent = "Адрес не найден. Попробуйте ввести только улицу или изменить номер дома.";
+                searchResults.appendChild(empty);
+                return;
+            }
+
+            visibleSearchResults.forEach((house, index) => {
+                const result = document.createElement("button");
+                result.className = "search-result";
+                result.type = "button";
+                result.dataset.resultIndex = String(index);
+                const icon = document.createElement("span");
+                icon.className = "search-result__icon";
+                icon.textContent = "⌂";
+                const content = document.createElement("span");
+                const address = document.createElement("span");
+                address.className = "search-result__address";
+                address.textContent = house.address;
+                const meta = document.createElement("span");
+                meta.className = "search-result__meta";
+                meta.textContent = [house.tk ? `ТК: ${house.tk}` : "", house.flats ? `${house.flats} квартир` : ""]
+                    .filter(Boolean).join(" · ") || "Координаты OpenStreetMap";
+                const arrow = document.createElement("span");
+                arrow.className = "search-result__arrow";
+                arrow.textContent = "›";
+                content.append(address, meta);
+                result.append(icon, content, arrow);
+                result.addEventListener("click", () => selectAddress(house));
+                searchResults.appendChild(result);
+            });
+        }
+
+        function updateActiveSearchResult() {
+            searchResults.querySelectorAll(".search-result").forEach((result, index) => {
+                result.classList.toggle("is-active", index === activeSearchResult);
+                if (index === activeSearchResult) result.scrollIntoView({ block: "nearest" });
+            });
+        }
+
+        function selectAddress(house) {
+            closeAddressSearch();
+            closeMapStyleMenu();
+            closeCard();
+            searchLocationLayer.clearLayers();
+            const icon = L.divIcon({
+                className: "search-location-marker",
+                html: '<span class="search-location-pin"><span>⌂</span></span>',
+                iconSize: [30, 30],
+                iconAnchor: [8, 27]
+            });
+            const marker = L.marker([house.lat, house.lng], {
+                icon,
+                zIndexOffset: 1200,
+                title: house.address
+            }).addTo(searchLocationLayer);
+            const tooltip = document.createElement("div");
+            tooltip.textContent = `${house.address}${house.tk ? ` · ТК ${house.tk}` : ""}`;
+            marker.bindTooltip(tooltip, {
+                className: "object-tooltip",
+                direction: "top",
+                offset: [7, -24],
+                permanent: true
+            }).openTooltip();
+            map.flyTo([house.lat, house.lng], 18, { duration: 0.85 });
         }
 
         function closeMapStyleMenu() {
@@ -723,6 +1493,9 @@
         }
 
         function coordinatesLabel(object, type) {
+            if (Number.isFinite(object.lat) && Number.isFinite(object.lng)) {
+                return `${object.lat.toFixed(6)}, ${object.lng.toFixed(6)}`;
+            }
             if (type === "Объект тепловой сети") {
                 return `${object.lat.toFixed(6)}, ${object.lng.toFixed(6)}`;
             }
@@ -885,6 +1658,8 @@
                 selectedLayer.getElement()?.classList.remove("is-selected");
             }
             selectedLayer = null;
+            activeHeatSourceId = null;
+            heatSourceDelete.hidden = true;
         }
 
         function pointToSegmentDistance(point, start, end) {
@@ -919,6 +1694,89 @@
             } else {
                 target.layer.setStyle(target.baseStyle);
             }
+        }
+
+        function dependencyOrigin(target) {
+            if (target.kind === "point") return target.latlng;
+            const coordinates = target.object.coordinates;
+            return L.latLng(coordinates[Math.floor(coordinates.length / 2)]);
+        }
+
+        function showDependentHouses(target) {
+            if (dependencyHideTimer !== null) {
+                clearTimeout(dependencyHideTimer);
+                dependencyHideTimer = null;
+            }
+            if (visibleDependencyTarget === target) return;
+            dependencyLayer.clearLayers();
+            visibleDependencyTarget = target || null;
+            const houseKeys = target?.object?.downstreamHouseKeys?.length
+                ? target.object.downstreamHouseKeys
+                : (target?.object?.dependentHouseKeys || []);
+            const houses = houseKeys.map(key => dependentHouseCatalog.get(key)).filter(Boolean);
+            dependencySummary.classList.toggle("is-visible", Boolean(target));
+
+            if (!target) {
+                dependencySummary.textContent = "";
+                return;
+            }
+
+            if (!houses.length) {
+                dependencySummary.textContent = `${target.object.name}: связанные дома в реестре не найдены`;
+                return;
+            }
+
+            const totalFlats = houses.reduce((sum, house) => sum + Number(house.flats || 0), 0);
+            dependencySummary.textContent = `${target.object.name}: ${houses.length} домов ниже по ветке${totalFlats ? ` · ${totalFlats} квартир` : ""} · подсвечены реальные здания`;
+
+            houses.forEach(house => {
+                const housePosition = L.latLng(house.lat, house.lng);
+                const houseLayer = house.outline?.length >= 3
+                    ? L.polygon(house.outline, {
+                        className: "dependent-building",
+                        color: "#ff8f00",
+                        weight: 2.5,
+                        opacity: 1,
+                        fillColor: "#ffd000",
+                        fillOpacity: 0.68,
+                        lineJoin: "round"
+                    }).addTo(dependencyLayer)
+                    : L.circleMarker(housePosition, {
+                        className: "dependent-building",
+                        radius: 8,
+                        color: "#ff8f00",
+                        weight: 3,
+                        fillColor: "#ffd000",
+                        fillOpacity: 0.78
+                    }).addTo(dependencyLayer);
+                const details = [house.address];
+                if (house.flats) details.push(`${house.flats} квартир`);
+                if (house.floors) details.push(`${house.floors} этажей`);
+                houseLayer.bindTooltip(details.join(" · "), {
+                    className: "object-tooltip",
+                    direction: "top",
+                    sticky: true
+                });
+                houseLayer.on("mouseover", () => {
+                    if (dependencyHideTimer !== null) {
+                        clearTimeout(dependencyHideTimer);
+                        dependencyHideTimer = null;
+                    }
+                });
+                houseLayer.on("mouseout", scheduleDependentHousesHide);
+            });
+        }
+
+        function refreshDependentHouses() {
+            showDependentHouses(hoveredTarget || aimedTarget);
+        }
+
+        function scheduleDependentHousesHide() {
+            if (dependencyHideTimer !== null) clearTimeout(dependencyHideTimer);
+            dependencyHideTimer = setTimeout(() => {
+                dependencyHideTimer = null;
+                refreshDependentHouses();
+            }, 240);
         }
 
         function applyAimHighlight(target) {
@@ -956,6 +1814,7 @@
             crosshairTarget.classList.toggle("is-visible", Boolean(nearest));
             crosshairTarget.textContent = nearest ? `${nearest.object.name} · нажмите для справки` : "";
             if (nearest) applyAimHighlight(nearest);
+            refreshDependentHouses();
         }
 
         function scheduleCrosshairUpdate() {
@@ -977,6 +1836,20 @@
             cardFolder.textContent = object.folder || "Без раздела";
             cardType.textContent = type;
             cardCoordinates.textContent = coordinatesLabel(object, type);
+            const accuracyLabels = {
+                exact: "точная точка здания",
+                "address-area": "по адресу, точка рядом со зданием",
+                "plus-code": "точно по коду локации",
+                manual: "вручную уточнено на карте",
+                area: "ориентировочно, центр указанного района",
+                approximate: "ориентировочное расположение"
+            };
+            heatSourceDetails.hidden = !object.isHeatSource;
+            activeHeatSourceId = object.isHeatSource ? object.id : null;
+            heatSourceDelete.hidden = !(object.isHeatSource && sourceEditModeEnabled);
+            if (object.isHeatSource) {
+                cardHeatSourceDetails.textContent = `${object.address}\n${accuracyLabels[object.accuracy] || "ориентировочное расположение"}`;
+            }
 
             const hasSafeLink = /^https:\/\//i.test(object.link || "");
             sourceLinkRow.hidden = !hasSafeLink;
@@ -1002,8 +1875,31 @@
             });
         }
 
+        function heatSourceIcon(object) {
+            const safe = safeColor(object.color, "#ff6b24");
+            const approximate = !["exact", "plus-code", "manual"].includes(object.accuracy);
+            return L.divIcon({
+                className: `heat-source-marker${approximate ? " is-approximate" : ""}`,
+                html: `<span class="heat-source-marker__pin" style="--source-color:${safe}">
+                    <span class="heat-source-marker__icon" aria-hidden="true">
+                        <svg viewBox="0 0 32 32" fill="none"><path d="M4 27V14l8 4v-5l7 4V7h5v12l4 2v6H4Z" fill="currentColor"/><path d="M8 23h3m3 0h3m3 0h3M22 4h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+                    </span>${approximate ? '<span class="heat-source-marker__badge">≈</span>' : ""}
+                </span><span class="heat-source-marker__label">${object.shortName}</span>`,
+                iconSize: [48, 48],
+                iconAnchor: [24, 24],
+                tooltipAnchor: [0, -28]
+            });
+        }
+
         function renderMap(data) {
             const bounds = [];
+            addressDatabase = data.addresses || [];
+            dependentHouseCatalog = new Map((data.dependentHouses || []).map(house => [house.key, house]));
+            allHeatSources = data.heatSources || [];
+            mapObjectCounts = { points: data.points.length, lines: data.lines.length };
+            const validSourceIds = new Set(allHeatSources.map(source => source.id));
+            deletedSourceIds = new Set([...deletedSourceIds].filter(id => validSourceIds.has(id)));
+            renderAddressResults("");
 
             data.lines.forEach(line => {
                 const baseStyle = {
@@ -1021,6 +1917,7 @@
                     layer: polyline,
                     baseStyle
                 });
+                const lineTarget = selectableObjects[selectableObjects.length - 1];
 
                 const lineDefectCount = (line.defects || []).length;
                 polyline.bindTooltip(lineDefectCount ? `${line.name} · дефектов: ${lineDefectCount}` : line.name, {
@@ -1032,7 +1929,80 @@
                     if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
                     openCard(line, "Участок тепловой сети", polyline);
                 });
+                polyline.on("mouseover", () => {
+                    hoveredTarget = lineTarget;
+                    refreshDependentHouses();
+                });
+                polyline.on("mouseout", () => {
+                    if (hoveredTarget === lineTarget) hoveredTarget = null;
+                    scheduleDependentHousesHide();
+                });
                 bounds.push(...line.coordinates);
+            });
+
+            (data.heatSources || []).forEach(source => {
+                if (deletedSourceIds.has(source.id)) return;
+                source.isHeatSource = true;
+                source.folder = "Теплоисточники КТЭК";
+                source.defects = source.defects || [];
+                source._initialLat = source.lat;
+                source._initialLng = source.lng;
+                source._initialAccuracy = source.accuracy;
+                const savedPosition = sourcePositionOverrides[source.id];
+                if (Number.isFinite(savedPosition?.lat) && Number.isFinite(savedPosition?.lng)) {
+                    source.lat = savedPosition.lat;
+                    source.lng = savedPosition.lng;
+                    source.accuracy = "manual";
+                }
+                const marker = L.marker([source.lat, source.lng], {
+                    icon: heatSourceIcon(source),
+                    draggable: sourceEditModeEnabled,
+                    riseOnHover: true,
+                    zIndexOffset: 900,
+                    title: source.name
+                }).addTo(heatSourcesLayer);
+                selectableObjects.push({
+                    kind: "point",
+                    object: source,
+                    type: "Теплоисточник",
+                    layer: marker,
+                    latlng: L.latLng(source.lat, source.lng)
+                });
+                const sourceTarget = selectableObjects[selectableObjects.length - 1];
+                heatSourceEntries.set(source.id, { source, marker, target: sourceTarget });
+                marker.bindTooltip(`<strong>${source.name}</strong><br>${source.address}`, {
+                    className: "object-tooltip",
+                    direction: "top",
+                    offset: [0, -8]
+                });
+                marker.on("click", event => {
+                    if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+                    openCard(source, "Теплоисточник", marker);
+                });
+                marker.on("mouseover", () => {
+                    hoveredTarget = sourceTarget;
+                    refreshDependentHouses();
+                });
+                marker.on("mouseout", () => {
+                    if (hoveredTarget === sourceTarget) hoveredTarget = null;
+                    scheduleDependentHousesHide();
+                });
+                marker.on("dragstart", () => {
+                    closeCard();
+                    marker.closeTooltip();
+                });
+                marker.on("dragend", () => {
+                    const position = marker.getLatLng();
+                    source.lat = Number(position.lat.toFixed(7));
+                    source.lng = Number(position.lng.toFixed(7));
+                    source.accuracy = "manual";
+                    sourceTarget.latlng = L.latLng(source.lat, source.lng);
+                    sourcePositionOverrides[source.id] = { lat: source.lat, lng: source.lng };
+                    marker.setIcon(heatSourceIcon(source));
+                    persistSourcePositions();
+                    scheduleCrosshairUpdate();
+                });
+                bounds.push([source.lat, source.lng]);
             });
 
             data.points.forEach(object => {
@@ -1048,6 +2018,7 @@
                     layer: marker,
                     latlng: L.latLng(object.lat, object.lng)
                 });
+                const pointTarget = selectableObjects[selectableObjects.length - 1];
 
                 const defectCount = (object.defects || []).length;
                 marker.bindTooltip(defectCount ? `${object.name} · дефектов: ${defectCount}` : object.name, {
@@ -1059,14 +2030,24 @@
                     if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
                     openCard(object, "Объект тепловой сети", marker);
                 });
+                marker.on("mouseover", () => {
+                    hoveredTarget = pointTarget;
+                    refreshDependentHouses();
+                });
+                marker.on("mouseout", () => {
+                    if (hoveredTarget === pointTarget) hoveredTarget = null;
+                    scheduleDependentHousesHide();
+                });
                 bounds.push([object.lat, object.lng]);
             });
 
-            mapCounter.textContent = `${data.points.length} объектов · ${data.lines.length} участков`;
+            updateMapCounter();
+            updateSourceEditStatus();
             scheduleCrosshairUpdate();
         }
 
         document.getElementById("cardClose").addEventListener("click", closeCard);
+        heatSourceDelete.addEventListener("click", deleteActiveHeatSource);
         map.on("click", () => {
             if (aimedTarget) {
                 openCard(aimedTarget.object, aimedTarget.type, aimedTarget.layer);
@@ -1074,12 +2055,59 @@
                 closeCard();
             }
             closeMapStyleMenu();
+            closeSourceEditor();
         });
         map.on("move zoom resize", scheduleCrosshairUpdate);
         document.addEventListener("keydown", event => {
             if (event.key === "Escape") {
                 closeCard();
                 closeMapStyleMenu();
+                closeAddressSearch();
+                closeSourceEditor();
+            }
+        });
+
+        sourceEditToggle.addEventListener("click", event => {
+            event.stopPropagation();
+            const isOpen = sourceEditor.classList.toggle("is-open");
+            sourceEditToggle.setAttribute("aria-expanded", String(isOpen));
+            closeAddressSearch();
+            closeMapStyleMenu();
+        });
+        sourceEditPanel.addEventListener("click", event => event.stopPropagation());
+        sourceEditMode.addEventListener("click", () => setSourceEditMode(!sourceEditModeEnabled));
+        sourceExport.addEventListener("click", exportSourcePositions);
+        sourceReset.addEventListener("click", () => {
+            if (window.confirm("Сбросить все вручную изменённые позиции котельных?")) resetSourcePositions();
+        });
+
+        searchToggle.addEventListener("click", event => {
+            event.stopPropagation();
+            const isOpen = addressSearch.classList.toggle("is-open");
+            searchToggle.setAttribute("aria-expanded", String(isOpen));
+            closeMapStyleMenu();
+            closeSourceEditor();
+            if (isOpen) {
+                window.setTimeout(() => {
+                    addressSearchInput.focus();
+                    addressSearchInput.select();
+                }, 80);
+            }
+        });
+        searchPanel.addEventListener("click", event => event.stopPropagation());
+        addressSearchInput.addEventListener("input", event => renderAddressResults(event.target.value));
+        addressSearchInput.addEventListener("keydown", event => {
+            if (event.key === "ArrowDown" && visibleSearchResults.length) {
+                event.preventDefault();
+                activeSearchResult = Math.min(activeSearchResult + 1, visibleSearchResults.length - 1);
+                updateActiveSearchResult();
+            } else if (event.key === "ArrowUp" && visibleSearchResults.length) {
+                event.preventDefault();
+                activeSearchResult = Math.max(activeSearchResult - 1, 0);
+                updateActiveSearchResult();
+            } else if (event.key === "Enter" && visibleSearchResults.length) {
+                event.preventDefault();
+                selectAddress(visibleSearchResults[Math.max(0, activeSearchResult)]);
             }
         });
 
@@ -1087,6 +2115,8 @@
             event.stopPropagation();
             const isOpen = mapStyleControl.classList.toggle("is-open");
             mapStyleToggle.setAttribute("aria-expanded", String(isOpen));
+            closeAddressSearch();
+            closeSourceEditor();
         });
         mapStyleOptions.forEach(option => {
             option.addEventListener("click", event => {
@@ -1096,11 +2126,13 @@
         });
         document.addEventListener("click", event => {
             if (!mapStyleControl.contains(event.target)) closeMapStyleMenu();
+            if (!addressSearch.contains(event.target)) closeAddressSearch();
+            if (!sourceEditor.contains(event.target)) closeSourceEditor();
         });
         setMapStyle(activeStyle);
         window.setInterval(updateLiveDefectTimers, 1000);
 
-        fetch("ktek_map_objects.json?v=20260813-defects", { cache: "no-store" })
+        fetch("ktek_map_objects.json?v=20260813-building-outlines", { cache: "no-store" })
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return response.json();
