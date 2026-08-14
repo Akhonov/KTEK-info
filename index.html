@@ -3400,7 +3400,7 @@
                 return true;
             }
             selectEditorTarget(target);
-            if (networkEditorAction !== "connect") return true;
+            if (networkEditorAction !== "connect") return false;
             const center = editorTargetCenter(target);
             if (!center) return true;
             if (!networkEditorConnectionStart) {
