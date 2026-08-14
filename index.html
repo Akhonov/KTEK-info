@@ -1495,6 +1495,21 @@
         .login-minimal .login-submit-spinner{border-color:rgba(255,255,255,.28);border-top-color:#fff}
         @media(max-width:700px){.ktek-login-overlay{padding:14px;background:rgba(7,15,18,.7)}.ktek-login-card.login-premium.login-minimal{padding:32px 27px 28px}}
 
+        /* Expo Go / phone layout: keep identity and map tools on separate rows. */
+        @media(max-width:640px){
+            .app-brand-user{top:8px;left:8px;height:40px;gap:6px;padding:4px 7px 4px 11px}
+            .brand-logo-text{font-size:12px}
+            .brand-divider,.user-display-name{display:none}
+            .user-role-tag{max-width:116px;padding:3px 7px;overflow:hidden;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
+            .btn-user-logout{width:29px;height:29px;margin-left:0}
+            .map-toolbar{top:56px;right:8px;left:8px;justify-content:flex-end;gap:5px}
+            .map-tool-btn,.twin-toggle,.source-edit-toggle,.search-toggle,.map-style-toggle{width:40px;height:40px}
+            .map-tool-btn svg,.twin-toggle svg,.source-edit-toggle svg,.search-toggle svg{width:19px;height:19px}
+            .twin-panel{position:fixed;top:104px;right:8px;left:8px;width:auto;max-width:none;max-height:calc(100dvh - 120px);overflow-x:hidden;overflow-y:auto;transform-origin:top center}
+            .map-tool-btn[data-title]:hover::after{display:none}
+            .map-counter{right:8px;bottom:8px;max-width:calc(100vw - 68px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        }
+
     </style>
 </head>
 <body>

@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "КТЭК Мобильная карта",
+    "slug": "ktek-mobile",
+    "version": "1.0.0",
+    "orientation": "default",
+    "scheme": "ktek",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#101d21"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "kz.ktek.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#101d21"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "kz.ktek.mobile"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "ktekWebPort": 8000,
+      "ktekWebPath": "/index.html"
+    }
+  }
+}
