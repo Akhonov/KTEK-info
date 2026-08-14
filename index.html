@@ -2155,6 +2155,9 @@
             const lines = data.lines || [];
             const points = data.points || [];
             const sources = (data.heatSources || []).filter(source => !deletedSourceIds.has(source.id));
+            const endpointJoinToleranceM = 12;
+            const sourceJoinToleranceM = 12;
+            const objectJoinToleranceM = 60;
             if (!lines.length) return [];
 
             const endpoints = lines.flatMap((line, lineIndex) => [
@@ -2184,7 +2187,7 @@
                     for (let lngOffset = -1; lngOffset <= 1; lngOffset += 1) {
                         const nearby = endpointGrid.get(`${cellLat + latOffset}:${cellLng + lngOffset}`) || [];
                         nearby.forEach(other => {
-                            if (map.distance(endpoint.position, endpoints[other].position) <= 12) union(index, other);
+                            if (map.distance(endpoint.position, endpoints[other].position) <= endpointJoinToleranceM) union(index, other);
                         });
                     }
                 }
@@ -2225,7 +2228,7 @@
                         nearestNode = node;
                     }
                 });
-                if (nearestNode === null || nearestDistance > 45) return;
+                if (nearestNode === null || nearestDistance > sourceJoinToleranceM) return;
                 (linesByNode.get(nearestNode) || []).forEach(lineIndex => {
                     const lineId = lines[lineIndex].id;
                     if (upstreamById.has(lineId)) return;
@@ -2265,7 +2268,7 @@
                         nearestNode = node;
                     }
                 });
-                if (nearestNode === null || nearestDistance > 60) return;
+                if (nearestNode === null || nearestDistance > objectJoinToleranceM) return;
                 const upstreamLineIndex = (linesByNode.get(nearestNode) || [])
                     .filter(index => upstreamById.has(lines[index].id))
                     .sort((a, b) => (depthById.get(lines[a].id) || Infinity) - (depthById.get(lines[b].id) || Infinity))[0];
