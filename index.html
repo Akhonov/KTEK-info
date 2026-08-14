@@ -1752,23 +1752,6 @@
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
         </button>
-        <button class="map-tool-btn btn-tool-boiler" id="btnOpenAddObject" type="button" data-title="Добавить котел / ТЭЦ">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 21V10l7 3V7l7 3V3h2v18H4z"></path>
-                <circle cx="9" cy="18" r="1.5" fill="currentColor"></circle>
-                <circle cx="15" cy="18" r="1.5" fill="currentColor"></circle>
-            </svg>
-        </button>
-        <button class="map-tool-btn btn-tool-pipe" id="btnStartDrawPipe" type="button" data-title="Трассировка сети">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 19 8 7 16 17 21 5"></polyline>
-                <circle cx="3" cy="19" r="2" fill="currentColor"></circle>
-                <circle cx="8" cy="7" r="2" fill="currentColor"></circle>
-                <circle cx="16" cy="17" r="2" fill="currentColor"></circle>
-                <circle cx="21" cy="5" r="2" fill="currentColor"></circle>
-            </svg>
-        </button>
-
         <div class="twin-control" id="twinControl">
             <button class="twin-toggle" id="twinToggle" type="button" aria-label="Цифровой двойник" aria-expanded="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -3460,8 +3443,6 @@
             const badge = document.getElementById("ktekUserBadge");
             const nameSpan = document.getElementById("ktekUserName");
             const btnIncident = document.getElementById("btnOpenAddIncident");
-            const btnBoiler = document.getElementById("btnOpenAddObject");
-            const btnPipe = document.getElementById("btnStartDrawPipe");
             const networkEditor = document.getElementById("sourceEditor");
 
             if (user) {
@@ -3490,22 +3471,16 @@
                     badge.textContent = "Администратор";
                     badge.className = "user-role-tag admin";
                     btnIncident.hidden = false;
-                    btnBoiler.hidden = false;
-                    btnPipe.hidden = false;
                     networkEditor.hidden = false;
                 } else if (profile.role === "dispatcher") {
                     badge.textContent = "Диспетчер";
                     badge.className = "user-role-tag dispatcher";
                     btnIncident.hidden = false;
-                    btnBoiler.hidden = false;
-                    btnPipe.hidden = false;
                     networkEditor.hidden = false;
                 } else {
                     badge.textContent = profile.name || "Бригада";
                     badge.className = "user-role-tag brigade";
                     btnIncident.hidden = true;
-                    btnBoiler.hidden = true;
-                    btnPipe.hidden = true;
                     networkEditor.hidden = true;
                 }
 
@@ -3575,8 +3550,6 @@
         };
 
         document.getElementById("btnOpenAddIncident").addEventListener("click", () => window.ktekOpenModal("addIncidentModal"));
-        document.getElementById("btnOpenAddObject").addEventListener("click", () => window.ktekOpenModal("addObjectModal"));
-        document.getElementById("btnStartDrawPipe").addEventListener("click", () => window.ktekStartFreeDrawing());
         document.getElementById("btnPickIncidentOnMap").addEventListener("click", () => window.ktekPickOnMap("incident"));
         document.getElementById("btnPickObjectOnMap").addEventListener("click", () => window.ktekPickOnMap("object"));
         document.getElementById("btnCancelMapPick").addEventListener("click", () => window.ktekCancelMapPick());
