@@ -3181,7 +3181,7 @@
                 return true;
             }
             if (objectPlacementStage === "confirm") {
-                confirmObjectPlacement();
+                placeObjectPreview(eventLatLng || editorTargetCenter(target));
                 return true;
             }
             selectEditorTarget(target);
@@ -3960,7 +3960,7 @@
             }
 
             if (objectPlacementStage === "confirm") {
-                confirmObjectPlacement();
+                placeObjectPreview(e.latlng);
                 return;
             }
 
