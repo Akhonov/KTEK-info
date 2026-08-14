@@ -278,6 +278,7 @@
         .telemetry-badge { padding: 4px 7px; border-radius: 7px; background: #e7faf4; color: #08775e; font-size: 9px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
         .telemetry-badge.warning { background: #fff4df; color: #ad6300; }
         .telemetry-badge.critical { background: #ffebe9; color: #c9281c; }
+        .telemetry-badge.disconnected { background: #eef1f3; color: #58666d; }
         .telemetry-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .telemetry-metric { padding: 11px; border: 1px solid #dfe7e9; border-radius: 12px; background: #fff; }
         .telemetry-metric__label { display: block; color: #8b989e; font-size: 9px; font-weight: 800; text-transform: uppercase; }
@@ -291,8 +292,10 @@
 
         .map-marker.telemetry-warning .map-marker__outer { box-shadow: 0 0 0 5px rgba(255, 167, 38, .28), 0 3px 10px rgba(0,0,0,.48); }
         .map-marker.telemetry-critical .map-marker__outer { animation: telemetryAlarm 1.25s ease-in-out infinite; }
+        .map-marker.telemetry-disconnected .map-marker__outer { background: #ef4444 !important; box-shadow: 0 0 0 5px rgba(239,68,68,.24), 0 0 18px rgba(239,68,68,.7); }
         .heat-source-marker.telemetry-warning .heat-source-marker__pin { outline: 3px solid #ffad32; outline-offset: 5px; }
         .heat-source-marker.telemetry-critical .heat-source-marker__pin { outline: 4px solid #ff3b30; outline-offset: 5px; animation: telemetryAlarm 1.25s ease-in-out infinite; }
+        .heat-source-marker.telemetry-disconnected .heat-source-marker__pin { outline: 4px solid #ef4444; outline-offset: 5px; opacity: .7; }
         @keyframes telemetryAlarm { 50% { filter: drop-shadow(0 0 9px rgba(255,59,48,.95)); } }
 
         body.dark .twin-toggle { background: rgba(37,46,51,.95); color: #7cf4d1; border-color: #46545b; }
@@ -2082,16 +2085,19 @@
         function renderObjectTelemetry(objectId) {
             const telemetry = twinSnapshot?.objects.get(objectId);
             if (!telemetry) return;
-            const labels = { normal: "Норма", warning: "Внимание", critical: "Авария" };
+            const labels = { normal: "Норма", warning: "Внимание", critical: "Авария", disconnected: "Нет подключения" };
             telemetryStatus.textContent = labels[telemetry.status] || "Норма";
             telemetryStatus.className = `telemetry-badge${telemetry.status === "normal" ? "" : ` ${telemetry.status}`}`;
-            telemetrySupply.textContent = telemetry.supply.toFixed(1);
-            telemetryReturn.textContent = telemetry.returnTemperature.toFixed(1);
-            telemetryPressure.textContent = telemetry.pressure.toFixed(2);
-            telemetryFlow.textContent = telemetry.flow.toFixed(1);
+            telemetrySupply.textContent = Number.isFinite(telemetry.supply) ? telemetry.supply.toFixed(1) : "—";
+            telemetryReturn.textContent = Number.isFinite(telemetry.returnTemperature) ? telemetry.returnTemperature.toFixed(1) : "—";
+            telemetryPressure.textContent = Number.isFinite(telemetry.pressure) ? telemetry.pressure.toFixed(2) : "—";
+            telemetryFlow.textContent = Number.isFinite(telemetry.flow) ? telemetry.flow.toFixed(1) : "—";
             telemetryChartLine.setAttribute("d", telemetryChartPath(telemetry.history));
-            telemetryImpact.hidden = !telemetry.leakAffected;
-            if (telemetry.leakAffected) {
+            telemetryImpact.hidden = !(telemetry.leakAffected || telemetry.status === "disconnected");
+            if (telemetry.status === "disconnected") {
+                telemetryImpact.className = "telemetry-impact critical";
+                telemetryImpact.textContent = "Нет гидравлической связи с тепловой сетью — подача, обратка, давление и расход отсутствуют";
+            } else if (telemetry.leakAffected) {
                 telemetryImpact.className = `telemetry-impact${telemetry.impactLevel === 0 ? " critical" : ""}`;
                 telemetryImpact.textContent = telemetry.impactLevel === 0
                     ? "Источник утечки: максимальная потеря давления и теплоносителя"
@@ -2104,6 +2110,10 @@
                 const telemetry = snapshot.objects.get(target.object.id);
                 if (!telemetry) return;
                 if (target.kind === "line") {
+                    if (telemetry.status === "disconnected") {
+                        target.layer.setStyle({ ...target.baseStyle, color: "#7b8790", opacity: 0.42, dashArray: "5, 7" });
+                        return;
+                    }
                     target.baseStyle.color = telemetry.status === "critical"
                         ? "#e32626"
                         : temperatureColor(telemetry.supply);
@@ -2113,6 +2123,7 @@
                     const element = target.layer.getElement();
                     element?.classList.toggle("telemetry-warning", telemetry.status === "warning");
                     element?.classList.toggle("telemetry-critical", telemetry.status === "critical");
+                    element?.classList.toggle("telemetry-disconnected", telemetry.status === "disconnected");
                 }
             });
         }
@@ -2154,7 +2165,7 @@
                     downstreamObjects: object.downstreamObjects || []
                 })),
                 ...(data.heatSources || []).filter(source => !deletedSourceIds.has(source.id)).map(object => ({
-                    id: object.id, name: object.name, type: "Теплоисточник", hasActiveDefect: false,
+                    id: object.id, name: object.name, type: "Теплоисточник", isHeatSource: true, hasActiveDefect: false,
                     downstreamObjects: object.downstreamObjects || []
                 }))
             ];
@@ -4100,6 +4111,10 @@
                                 id: customSourceObj.id,
                                 name: customSourceObj.name,
                                 type: typeConfig.label,
+                                isHeatSource,
+                                connected: isHeatSource || obj.connectionStatus === "connected",
+                                upstreamId: isHeatSource ? null : (telemetry.pipelineId || null),
+                                connectionDistanceM: telemetry.distanceM || 0,
                                 hasActiveDefect: false,
                                 downstreamObjects: []
                             });
@@ -4170,6 +4185,9 @@
                                 id: customPipeObj.id,
                                 name: customPipeObj.name,
                                 type: "Участок тепловой сети",
+                                connected: Boolean(pipe.sourceId),
+                                upstreamId: pipe.sourceId || null,
+                                connectionDistanceM: pipe.lengthM || 0,
                                 hasActiveDefect: false,
                                 downstreamObjects: []
                             });
