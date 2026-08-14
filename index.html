@@ -1495,6 +1495,201 @@
         .login-minimal .login-submit-spinner{border-color:rgba(255,255,255,.28);border-top-color:#fff}
         @media(max-width:700px){.ktek-login-overlay{padding:14px;background:rgba(7,15,18,.7)}.ktek-login-card.login-premium.login-minimal{padding:32px 27px 28px}}
 
+        /* 6. WORK ORDERS JOURNAL */
+        .map-tool-btn.btn-tool-orders { color: #176b61; }
+        .map-tool-btn.btn-tool-orders:hover,
+        .map-tool-btn.btn-tool-orders.has-new-orders {
+            background: #176b61;
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(23, 107, 97, .38);
+        }
+        .work-orders-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 19px;
+            height: 19px;
+            display: none;
+            place-items: center;
+            padding: 0 5px;
+            border: 2px solid #fff;
+            border-radius: 999px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 900;
+        }
+        .work-orders-badge.is-visible { display: grid; }
+        .work-orders-card {
+            width: min(940px, 100%);
+            max-width: 940px;
+            max-height: min(820px, calc(100vh - 32px));
+            overflow: hidden;
+            padding: 0;
+            background: #f5f7f7;
+            border-color: #d7e0e1;
+            color: #1f3035;
+        }
+        .work-orders-card .ktek-modal-header {
+            margin: 0;
+            padding: 18px 22px;
+            border-color: #dce4e5;
+            background: #fff;
+        }
+        .work-orders-card .ktek-modal-title { color: #17343a; }
+        .work-orders-card .ktek-modal-close { color: #64777c; }
+        .work-orders-card .ktek-modal-close:hover { color: #17282e; }
+        .work-orders-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 22px;
+            border-bottom: 1px solid #dce4e5;
+            background: #edf2f2;
+        }
+        .work-orders-summary { display: flex; flex-wrap: wrap; gap: 8px; }
+        .work-orders-stat {
+            padding: 6px 10px;
+            border: 1px solid #d3dddd;
+            border-radius: 9px;
+            background: #fff;
+            color: #637479;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .work-orders-stat strong { margin-left: 4px; color: #17343a; font-size: 12px; }
+        .work-orders-primary-btn,
+        .work-order-submit-btn {
+            padding: 9px 14px;
+            border: 0;
+            border-radius: 9px;
+            background: #176b61;
+            color: #fff;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .work-orders-primary-btn:hover,
+        .work-order-submit-btn:hover { background: #125a52; }
+        .work-order-form-panel {
+            margin: 16px 22px 0;
+            padding: 17px;
+            border: 1px solid #d5dfe0;
+            border-radius: 13px;
+            background: #fff;
+        }
+        .work-order-form-panel.hidden { display: none; }
+        .work-order-form-panel .ktek-form-label { color: #44565c; }
+        .work-order-form-panel .ktek-input,
+        .work-order-report-form .ktek-input {
+            border-color: #cbd6d8;
+            background: #fbfcfc;
+            color: #1c3036;
+        }
+        .work-order-form-panel .ktek-input::placeholder,
+        .work-order-report-form .ktek-input::placeholder { color: #91a0a4; }
+        .work-order-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+        .work-order-secondary-btn,
+        .work-order-danger-btn {
+            padding: 8px 12px;
+            border: 1px solid #cbd6d8;
+            border-radius: 9px;
+            background: #fff;
+            color: #52656a;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 750;
+            cursor: pointer;
+        }
+        .work-order-danger-btn { border-color: #f0c6c6; color: #b43b3b; }
+        .work-order-secondary-btn:hover { background: #eef3f3; }
+        .work-order-danger-btn:hover { background: #fff1f1; }
+        .work-orders-notice { display: none; margin: 12px 22px 0; padding: 9px 11px; border-radius: 9px; font-size: 11px; font-weight: 700; }
+        .work-orders-notice.is-visible { display: block; }
+        .work-orders-notice.success { background: #e8f7f1; color: #11705f; }
+        .work-orders-notice.error { background: #fff0f0; color: #a93636; }
+        .work-orders-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 11px;
+            max-height: calc(100vh - 238px);
+            min-height: 220px;
+            padding: 16px 22px 22px;
+            overflow-y: auto;
+        }
+        .work-order-card {
+            position: relative;
+            min-height: 142px;
+            padding: 15px;
+            border: 1px solid #d8e1e2;
+            border-left: 4px solid #ef9f43;
+            border-radius: 12px;
+            background: #fff;
+            color: #213338;
+            cursor: pointer;
+            text-align: left;
+            font: inherit;
+            transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+        }
+        .work-order-card:hover { transform: translateY(-1px); border-color: #b8c9c9; box-shadow: 0 9px 24px rgba(42, 64, 68, .1); }
+        .work-order-card.is-completed { border-left-color: #24a178; }
+        .work-order-card.is-progress { border-left-color: #2c84c6; }
+        .work-order-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .work-order-card__number { color: #7a8b8f; font-size: 9px; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+        .work-order-card__title { margin: 6px 0 8px; color: #172a30; font-size: 14px; line-height: 1.3; }
+        .work-order-card__meta { display: grid; gap: 5px; color: #65777b; font-size: 10px; }
+        .work-order-card__meta strong { color: #2d454b; }
+        .work-order-status {
+            flex: 0 0 auto;
+            padding: 4px 7px;
+            border-radius: 7px;
+            background: #fff3dd;
+            color: #a8640b;
+            font-size: 9px;
+            font-weight: 850;
+            white-space: nowrap;
+        }
+        .work-order-status.in_progress { background: #e6f3fb; color: #226f9f; }
+        .work-order-status.completed { background: #e6f7f0; color: #13745a; }
+        .work-orders-empty { grid-column: 1 / -1; display: grid; place-items: center; min-height: 210px; color: #7c8d91; text-align: center; font-size: 12px; line-height: 1.6; }
+        .work-order-detail { max-height: calc(100vh - 78px); overflow-y: auto; padding: 20px 22px 24px; }
+        .work-order-detail.hidden,
+        .work-orders-journal.hidden { display: none; }
+        .work-order-detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+        .work-order-back { display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; background: transparent; color: #176b61; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
+        .work-order-detail-title { margin: 10px 0 0; color: #172a30; font-size: 20px; }
+        .work-order-info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 15px; }
+        .work-order-info-item { padding: 11px; border: 1px solid #dce4e5; border-radius: 10px; background: #fff; }
+        .work-order-info-item span { display: block; color: #819094; font-size: 9px; font-weight: 750; text-transform: uppercase; }
+        .work-order-info-item strong { display: block; margin-top: 5px; color: #243a40; font-size: 12px; }
+        .work-order-description,
+        .work-order-report-view,
+        .work-order-report-form { margin-top: 12px; padding: 15px; border: 1px solid #d9e2e3; border-radius: 12px; background: #fff; }
+        .work-order-section-title { margin: 0 0 10px; color: #2d444a; font-size: 12px; }
+        .work-order-description p,
+        .work-order-report-view p { margin: 0; color: #64767b; font-size: 11px; line-height: 1.6; white-space: pre-wrap; }
+        .work-order-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+        .work-order-photo-picker { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px dashed #9db2b3; border-radius: 9px; color: #176b61; background: #f5faf9; font-size: 10px; font-weight: 800; cursor: pointer; }
+        .work-order-photo-picker:hover { background: #e9f5f2; }
+        .work-order-photo-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+        .work-order-photo { position: relative; min-height: 92px; overflow: hidden; border: 1px solid #d5dfe0; border-radius: 9px; background: #edf2f2; }
+        .work-order-photo img { width: 100%; height: 100%; min-height: 92px; display: block; object-fit: cover; cursor: zoom-in; }
+        .work-order-photo button { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border: 0; border-radius: 50%; background: rgba(17, 29, 33, .82); color: #fff; cursor: pointer; }
+        .work-order-report-meta { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; color: #607277; font-size: 10px; }
+        .work-order-report-meta strong { color: #234047; }
+        .work-order-detail-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+        @media(max-width:720px) {
+            .work-orders-card { max-height: calc(100vh - 18px); }
+            .work-orders-toolbar { align-items: flex-start; flex-direction: column; }
+            .work-orders-list { grid-template-columns: 1fr; max-height: calc(100vh - 255px); padding: 13px; }
+            .work-order-form-panel { margin: 12px 13px 0; }
+            .work-order-info-grid { grid-template-columns: repeat(2, 1fr); }
+            .work-order-photo-grid { grid-template-columns: repeat(2, 1fr); }
+            .work-orders-card .ktek-grid-2 { grid-template-columns: 1fr; }
+        }
+
     </style>
 </head>
 <body>
@@ -1751,6 +1946,103 @@
         </div>
     </div>
 
+    <!-- ===== ЖУРНАЛ НАРЯДОВ ДЛЯ АДМИНИСТРАТОРА И БРИГАД ===== -->
+    <div id="workOrdersModal" class="ktek-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="workOrdersTitle">
+        <div class="ktek-modal-card work-orders-card">
+            <div class="ktek-modal-header">
+                <h3 class="ktek-modal-title" id="workOrdersTitle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;color:#176b61;">
+                        <path d="M9 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3"></path>
+                        <rect x="9" y="3" width="6" height="4" rx="1"></rect><path d="m9 14 2 2 4-5"></path>
+                    </svg>
+                    Журнал нарядов
+                </h3>
+                <button type="button" onclick="window.ktekCloseModal('workOrdersModal')" class="ktek-modal-close" aria-label="Закрыть">✕</button>
+            </div>
+
+            <section id="workOrdersJournalView" class="work-orders-journal">
+                <div class="work-orders-toolbar">
+                    <div class="work-orders-summary" id="workOrdersSummary">
+                        <span class="work-orders-stat">Всего <strong>0</strong></span>
+                        <span class="work-orders-stat">В работе <strong>0</strong></span>
+                        <span class="work-orders-stat">Выполнено <strong>0</strong></span>
+                    </div>
+                    <button id="btnCreateWorkOrder" class="work-orders-primary-btn" type="button" hidden>+ Новый наряд</button>
+                </div>
+
+                <div id="workOrdersNotice" class="work-orders-notice" role="status"></div>
+
+                <div id="workOrderFormPanel" class="work-order-form-panel hidden">
+                    <form id="workOrderForm">
+                        <div class="ktek-grid-2">
+                            <div class="ktek-form-group">
+                                <label class="ktek-form-label" for="workOrderTitleInput">Задача</label>
+                                <input id="workOrderTitleInput" class="ktek-input" type="text" placeholder="Например, обследовать тепловые камеры" maxlength="120" required>
+                            </div>
+                            <div class="ktek-form-group">
+                                <label class="ktek-form-label" for="workOrderBrigadeInput">Назначить бригаду</label>
+                                <select id="workOrderBrigadeInput" class="ktek-input" required>
+                                    <option value="Бригада №1 (Центр)">Бригада №1 (Центр)</option>
+                                    <option value="Бригада №2 (КСК)">Бригада №2 (КСК)</option>
+                                    <option value="Бригада №3 (Запад)">Бригада №3 (Запад)</option>
+                                    <option value="Бригада №4 (Юбилейный)">Бригада №4 (Юбилейный)</option>
+                                    <option value="Бригада №5 (Аварийная)">Бригада №5 (Аварийная)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="ktek-grid-2">
+                            <div class="ktek-grid-2">
+                                <div class="ktek-form-group">
+                                    <label class="ktek-form-label" for="workOrderQuantityInput">Количество</label>
+                                    <input id="workOrderQuantityInput" class="ktek-input" type="number" min="0.01" step="0.01" value="1" required>
+                                </div>
+                                <div class="ktek-form-group">
+                                    <label class="ktek-form-label" for="workOrderUnitInput">Единица</label>
+                                    <select id="workOrderUnitInput" class="ktek-input">
+                                        <option value="шт.">шт.</option>
+                                        <option value="м">м</option>
+                                        <option value="м²">м²</option>
+                                        <option value="объектов">объектов</option>
+                                        <option value="часов">часов</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="ktek-grid-2">
+                                <div class="ktek-form-group">
+                                    <label class="ktek-form-label" for="workOrderDueDateInput">Срок</label>
+                                    <input id="workOrderDueDateInput" class="ktek-input" type="date" required>
+                                </div>
+                                <div class="ktek-form-group">
+                                    <label class="ktek-form-label" for="workOrderPriorityInput">Приоритет</label>
+                                    <select id="workOrderPriorityInput" class="ktek-input">
+                                        <option value="normal">Обычный</option>
+                                        <option value="high">Срочный</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ktek-form-group">
+                            <label class="ktek-form-label" for="workOrderDescriptionInput">Описание работ</label>
+                            <textarea id="workOrderDescriptionInput" class="ktek-input" rows="3" maxlength="1200" placeholder="Адрес, требования к выполнению, материалы и примечания"></textarea>
+                        </div>
+                        <div class="work-order-form-actions">
+                            <button id="btnCancelWorkOrder" class="work-order-secondary-btn" type="button">Отмена</button>
+                            <button class="work-order-submit-btn" type="submit">Назначить бригаде</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="workOrdersList" class="work-orders-list">
+                    <div class="work-orders-empty">Загрузка нарядов…</div>
+                </div>
+            </section>
+
+            <section id="workOrderDetailView" class="work-order-detail hidden">
+                <div id="workOrderDetailContent"></div>
+            </section>
+        </div>
+    </div>
+
     <div id="map" aria-label="Карта тепловых сетей Костаная"></div>
 
     <div class="dependency-summary" id="dependencySummary" aria-live="polite"></div>
@@ -1763,6 +2055,13 @@
                 <line x1="12" y1="9" x2="12" y2="13"></line>
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
+        </button>
+        <button class="map-tool-btn btn-tool-orders" id="btnOpenWorkOrders" type="button" data-title="Журнал нарядов" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3"></path>
+                <rect x="9" y="3" width="6" height="4" rx="1"></rect><path d="m9 14 2 2 4-5"></path>
+            </svg>
+            <span id="workOrdersBadge" class="work-orders-badge" aria-label="Новые наряды"></span>
         </button>
         <div class="twin-control" id="twinControl">
             <button class="twin-toggle" id="twinToggle" type="button" aria-label="Цифровой двойник" aria-expanded="false">
@@ -3238,7 +3537,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, get, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, get, push, set, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD4kVWah6OImJwTFUi2hKN5NdEEY6zfdcs",
@@ -3280,6 +3579,10 @@
         let objectPlacementStage = null;
         let objectPlacementPoint = null;
         let objectPlacementMarker = null;
+        let workOrdersData = {};
+        let workOrdersListenerStarted = false;
+        let activeWorkOrderId = null;
+        let pendingReportPhotos = [];
 
         const customObjectTypes = {
             boiler: { label: "Котельная / ТЭЦ", color: "#ff6b24", source: true },
@@ -3804,6 +4107,7 @@
             const badge = document.getElementById("ktekUserBadge");
             const nameSpan = document.getElementById("ktekUserName");
             const btnIncident = document.getElementById("btnOpenAddIncident");
+            const btnWorkOrders = document.getElementById("btnOpenWorkOrders");
             const networkEditor = document.getElementById("sourceEditor");
 
             if (user) {
@@ -3827,6 +4131,7 @@
 
                 currentUserProfile = profile;
                 nameSpan.textContent = profile.name || user.email.split('@')[0];
+                btnWorkOrders.hidden = false;
 
                 if (profile.role === "admin") {
                     badge.textContent = "Администратор";
@@ -3845,10 +4150,13 @@
                     networkEditor.hidden = true;
                 }
 
+                renderWorkOrdersJournal();
                 listenFirebaseRealtime();
             } else {
                 returnToLogin();
                 currentUserProfile = null;
+                btnWorkOrders.hidden = true;
+                window.ktekCloseModal?.("workOrdersModal");
             }
         });
 
@@ -3921,7 +4229,451 @@
         document.getElementById("btnAutoCaptureHouses").addEventListener("click", () => window.autoCaptureHousesAlongRoute(150));
         document.getElementById("btnToggleHousePicker").addEventListener("click", () => window.toggleHouseSelectionMode());
 
-        // ── 3. ADDRESS AUTOCOMPLETE SEARCH ──
+        // ── 3. WORK ORDERS JOURNAL ──
+        const workOrderStatusLabels = {
+            open: "Назначен",
+            in_progress: "В работе",
+            completed: "Выполнен"
+        };
+
+        function escapeWorkOrderHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;"
+            })[char]);
+        }
+
+        function isWorkOrderAdmin() {
+            return currentUserProfile?.role === "admin";
+        }
+
+        function isWorkOrderBrigade() {
+            return Boolean(currentUserProfile && !["admin", "dispatcher"].includes(currentUserProfile.role));
+        }
+
+        function workOrderBelongsToCurrentBrigade(order) {
+            if (!currentUserProfile || !order) return false;
+            if (!isWorkOrderBrigade()) return true;
+
+            const assigned = String(order.brigade || "").toLowerCase();
+            const identity = [
+                currentUserProfile.name,
+                currentUserProfile.email,
+                currentUserProfile.role,
+                currentUserProfile.brigade,
+                currentUserProfile.brigadeId
+            ].filter(Boolean).join(" ").toLowerCase();
+
+            if (currentUserProfile.brigade && String(currentUserProfile.brigade).toLowerCase() === assigned) return true;
+            const assignedNumber = assigned.match(/\d+/)?.[0];
+            if (!assignedNumber) return identity.includes(assigned);
+
+            return identity.includes("бригада №" + assignedNumber)
+                || identity.includes("бригада " + assignedNumber)
+                || identity.includes("brigade" + assignedNumber)
+                || identity.includes("brigade_" + assignedNumber)
+                || identity.includes("brigade-" + assignedNumber);
+        }
+
+        function getVisibleWorkOrders() {
+            return Object.entries(workOrdersData)
+                .filter(([, order]) => !isWorkOrderBrigade() || workOrderBelongsToCurrentBrigade(order))
+                .sort(([, first], [, second]) => String(second.createdAt || "").localeCompare(String(first.createdAt || "")));
+        }
+
+        function formatWorkOrderDate(value, includeTime = false) {
+            if (!value) return "—";
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return escapeWorkOrderHtml(value);
+            return new Intl.DateTimeFormat("ru-RU", includeTime
+                ? { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }
+                : { day: "2-digit", month: "2-digit", year: "numeric" }
+            ).format(date);
+        }
+
+        function setDefaultWorkOrderDueDate() {
+            const input = document.getElementById("workOrderDueDateInput");
+            if (!input || input.value) return;
+            const due = new Date();
+            due.setDate(due.getDate() + 3);
+            due.setMinutes(due.getMinutes() - due.getTimezoneOffset());
+            input.value = due.toISOString().slice(0, 10);
+        }
+
+        function showWorkOrderNotice(message, type = "success") {
+            const notice = document.getElementById("workOrdersNotice");
+            notice.textContent = message;
+            notice.className = "work-orders-notice is-visible " + type;
+            window.clearTimeout(showWorkOrderNotice.timer);
+            showWorkOrderNotice.timer = window.setTimeout(() => {
+                notice.className = "work-orders-notice";
+            }, 4200);
+        }
+
+        function updateWorkOrdersBadge(orders) {
+            const badge = document.getElementById("workOrdersBadge");
+            const button = document.getElementById("btnOpenWorkOrders");
+            if (!badge || !button) return;
+            const activeCount = orders.filter(([, order]) => order.status !== "completed").length;
+            badge.textContent = activeCount > 99 ? "99+" : String(activeCount);
+            badge.classList.toggle("is-visible", activeCount > 0);
+            button.classList.toggle("has-new-orders", activeCount > 0 && isWorkOrderBrigade());
+        }
+
+        function renderWorkOrdersJournal() {
+            const list = document.getElementById("workOrdersList");
+            if (!list) return;
+
+            const orders = getVisibleWorkOrders();
+            const inProgress = orders.filter(([, order]) => order.status === "open" || order.status === "in_progress").length;
+            const completed = orders.filter(([, order]) => order.status === "completed").length;
+            document.getElementById("workOrdersSummary").innerHTML =
+                '<span class="work-orders-stat">Всего <strong>' + orders.length + '</strong></span>' +
+                '<span class="work-orders-stat">В работе <strong>' + inProgress + '</strong></span>' +
+                '<span class="work-orders-stat">Выполнено <strong>' + completed + '</strong></span>';
+
+            const createButton = document.getElementById("btnCreateWorkOrder");
+            createButton.hidden = !isWorkOrderAdmin();
+            updateWorkOrdersBadge(orders);
+
+            if (!orders.length) {
+                list.innerHTML = '<div class="work-orders-empty"><div><strong>Нарядов пока нет</strong><br>' +
+                    (isWorkOrderAdmin() ? 'Создайте первый наряд и назначьте его бригаде.' : 'Новые задания появятся здесь автоматически.') +
+                    '</div></div>';
+                return;
+            }
+
+            list.innerHTML = orders.map(([id, order], index) => {
+                const status = order.status || "open";
+                const cardClass = status === "completed" ? " is-completed" : (status === "in_progress" ? " is-progress" : "");
+                const reportMark = order.report ? " · отчёт получен" : "";
+                return '<button type="button" class="work-order-card' + cardClass + '" data-work-order-id="' + escapeWorkOrderHtml(id) + '">' +
+                    '<div class="work-order-card__top"><div><div class="work-order-card__number">' +
+                    escapeWorkOrderHtml(order.number || ("Наряд №" + String(orders.length - index).padStart(3, "0"))) +
+                    '</div><h4 class="work-order-card__title">' +
+                    escapeWorkOrderHtml(order.title || "Без названия") + '</h4></div><span class="work-order-status ' +
+                    escapeWorkOrderHtml(status) + '">' + escapeWorkOrderHtml(workOrderStatusLabels[status] || status) + '</span></div>' +
+                    '<div class="work-order-card__meta"><span><strong>Бригада:</strong> ' + escapeWorkOrderHtml(order.brigade) +
+                    '</span><span><strong>Объём:</strong> ' + escapeWorkOrderHtml(order.quantity) + ' ' +
+                    escapeWorkOrderHtml(order.unit || "шт.") + '</span><span><strong>Срок:</strong> ' +
+                    formatWorkOrderDate(order.dueDate) + escapeWorkOrderHtml(reportMark) + '</span></div></button>';
+            }).join("");
+        }
+
+        function safeWorkOrderPhoto(photo) {
+            const src = String(photo?.dataUrl || "");
+            return /^data:image\/(?:jpeg|png|webp);base64,/i.test(src) ? src : "";
+        }
+
+        function renderStoredWorkOrderPhotos(photos) {
+            const safePhotos = (Array.isArray(photos) ? photos : []).filter(safeWorkOrderPhoto);
+            if (!safePhotos.length) return '<p>Фотографии не приложены.</p>';
+            return '<div class="work-order-photo-grid">' + safePhotos.map((photo) => {
+                const src = safeWorkOrderPhoto(photo);
+                return '<div class="work-order-photo"><a href="' + src + '" target="_blank" rel="noopener" title="Открыть фотографию">' +
+                    '<img src="' + src + '" alt="' + escapeWorkOrderHtml(photo.name || "Фото отчёта") + '"></a></div>';
+            }).join("") + '</div>';
+        }
+
+        function renderReportPhotoPreview() {
+            const preview = document.getElementById("workOrderPhotoPreview");
+            if (!preview) return;
+            if (!pendingReportPhotos.length) {
+                preview.innerHTML = '<p style="grid-column:1/-1;margin:0;color:#819094;font-size:10px;">До 4 фотографий. JPG, PNG или WEBP.</p>';
+                return;
+            }
+            preview.innerHTML = pendingReportPhotos.map((photo, index) => {
+                const src = safeWorkOrderPhoto(photo);
+                if (!src) return "";
+                return '<div class="work-order-photo"><img src="' + src + '" alt="' +
+                    escapeWorkOrderHtml(photo.name || "Фото") + '"><button type="button" data-remove-report-photo="' +
+                    index + '" aria-label="Удалить фотографию">✕</button></div>';
+            }).join("");
+        }
+
+        function renderWorkOrderDetail(id) {
+            const order = workOrdersData[id];
+            const content = document.getElementById("workOrderDetailContent");
+            if (!order || !content || (isWorkOrderBrigade() && !workOrderBelongsToCurrentBrigade(order))) {
+                window.ktekShowWorkOrdersJournal();
+                return;
+            }
+
+            activeWorkOrderId = id;
+            const status = order.status || "open";
+            const report = order.report || null;
+            const canReport = isWorkOrderBrigade() && workOrderBelongsToCurrentBrigade(order);
+            pendingReportPhotos = canReport && Array.isArray(report?.photos)
+                ? report.photos.filter(safeWorkOrderPhoto).slice(0, 4)
+                : [];
+
+            let reportSection = "";
+            if (canReport) {
+                reportSection =
+                    '<form id="workOrderReportForm" class="work-order-report-form">' +
+                    '<h4 class="work-order-section-title">' + (report ? "Обновить отчёт бригады" : "Отчёт о выполнении") + '</h4>' +
+                    '<div class="ktek-grid-2"><div class="ktek-form-group"><label class="ktek-form-label" for="workOrderCompletedQuantity">Выполнено</label>' +
+                    '<input id="workOrderCompletedQuantity" class="ktek-input" type="number" min="0" step="0.01" value="' +
+                    escapeWorkOrderHtml(report?.completedQuantity ?? order.quantity ?? 0) + '" required></div>' +
+                    '<div class="ktek-form-group"><label class="ktek-form-label">Единица измерения</label><input class="ktek-input" value="' +
+                    escapeWorkOrderHtml(order.unit || "шт.") + '" disabled></div></div>' +
+                    '<div class="ktek-form-group"><label class="ktek-form-label" for="workOrderReportText">Что выполнено</label>' +
+                    '<textarea id="workOrderReportText" class="ktek-input" rows="4" maxlength="2000" placeholder="Опишите выполненные работы и результат" required>' +
+                    escapeWorkOrderHtml(report?.text || "") + '</textarea></div>' +
+                    '<div><input id="workOrderPhotoInput" class="work-order-photo-input" type="file" accept="image/jpeg,image/png,image/webp" multiple>' +
+                    '<label class="work-order-photo-picker" for="workOrderPhotoInput">📷 Добавить фотографии</label>' +
+                    '<div id="workOrderPhotoPreview" class="work-order-photo-grid"></div></div>' +
+                    '<div class="work-order-detail-actions">' +
+                    (status === "open" ? '<button type="button" class="work-order-secondary-btn" data-work-order-action="start">Начать работу</button>' : '') +
+                    '<button type="submit" class="work-order-submit-btn">Отправить отчёт</button></div></form>';
+            } else if (report) {
+                reportSection =
+                    '<section class="work-order-report-view"><h4 class="work-order-section-title">Отчёт бригады</h4>' +
+                    '<div class="work-order-report-meta"><span>Выполнено: <strong>' +
+                    escapeWorkOrderHtml(report.completedQuantity ?? "—") + ' ' + escapeWorkOrderHtml(order.unit || "шт.") +
+                    '</strong></span><span>Отправлен: <strong>' + formatWorkOrderDate(report.submittedAt, true) +
+                    '</strong></span><span>Автор: <strong>' + escapeWorkOrderHtml(report.submittedBy || order.brigade) +
+                    '</strong></span></div><p>' + escapeWorkOrderHtml(report.text || "Без комментария") + '</p>' +
+                    renderStoredWorkOrderPhotos(report.photos) + '</section>';
+            } else {
+                reportSection = '<section class="work-order-report-view"><h4 class="work-order-section-title">Отчёт бригады</h4>' +
+                    '<p>Бригада ещё не предоставила отчёт по этому наряду.</p></section>';
+            }
+
+            content.innerHTML =
+                '<div class="work-order-detail-head"><div><button type="button" class="work-order-back" data-work-order-action="back">← Назад к журналу</button>' +
+                '<h3 class="work-order-detail-title">' + escapeWorkOrderHtml(order.title || "Наряд") + '</h3></div>' +
+                '<span class="work-order-status ' + escapeWorkOrderHtml(status) + '">' +
+                escapeWorkOrderHtml(workOrderStatusLabels[status] || status) + '</span></div>' +
+                '<div class="work-order-info-grid"><div class="work-order-info-item"><span>Бригада</span><strong>' +
+                escapeWorkOrderHtml(order.brigade) + '</strong></div><div class="work-order-info-item"><span>План</span><strong>' +
+                escapeWorkOrderHtml(order.quantity) + ' ' + escapeWorkOrderHtml(order.unit || "шт.") +
+                '</strong></div><div class="work-order-info-item"><span>Срок</span><strong>' +
+                formatWorkOrderDate(order.dueDate) + '</strong></div><div class="work-order-info-item"><span>Приоритет</span><strong>' +
+                (order.priority === "high" ? "Срочный" : "Обычный") + '</strong></div></div>' +
+                '<section class="work-order-description"><h4 class="work-order-section-title">Задание</h4><p>' +
+                escapeWorkOrderHtml(order.description || "Дополнительное описание не указано.") + '</p></section>' +
+                reportSection +
+                (isWorkOrderAdmin() ? '<div class="work-order-detail-actions"><button type="button" class="work-order-danger-btn" data-work-order-action="delete">Удалить наряд</button></div>' : '');
+
+            renderReportPhotoPreview();
+        }
+
+        window.ktekShowWorkOrdersJournal = function() {
+            activeWorkOrderId = null;
+            pendingReportPhotos = [];
+            document.getElementById("workOrderDetailView").classList.add("hidden");
+            document.getElementById("workOrdersJournalView").classList.remove("hidden");
+            renderWorkOrdersJournal();
+        };
+
+        function openWorkOrderDetail(id) {
+            document.getElementById("workOrdersJournalView").classList.add("hidden");
+            document.getElementById("workOrderDetailView").classList.remove("hidden");
+            renderWorkOrderDetail(id);
+        }
+
+        function compressWorkOrderImage(file) {
+            return new Promise((resolve, reject) => {
+                if (!file.type.startsWith("image/")) {
+                    reject(new Error("Можно загружать только изображения."));
+                    return;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                    reject(new Error("Размер одного фото не должен превышать 10 МБ."));
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error("Не удалось прочитать фотографию."));
+                reader.onload = () => {
+                    const image = new Image();
+                    image.onerror = () => reject(new Error("Файл не распознан как изображение."));
+                    image.onload = () => {
+                        const maximumSide = 1200;
+                        const scale = Math.min(1, maximumSide / Math.max(image.width, image.height));
+                        const canvas = document.createElement("canvas");
+                        canvas.width = Math.max(1, Math.round(image.width * scale));
+                        canvas.height = Math.max(1, Math.round(image.height * scale));
+                        const context = canvas.getContext("2d");
+                        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                        let dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+                        if (dataUrl.length > 900000) dataUrl = canvas.toDataURL("image/jpeg", 0.52);
+                        if (dataUrl.length > 1250000) {
+                            reject(new Error("Фото слишком большое даже после сжатия."));
+                            return;
+                        }
+                        resolve({ name: file.name.slice(0, 90), dataUrl });
+                    };
+                    image.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        document.getElementById("btnOpenWorkOrders").addEventListener("click", () => {
+            document.getElementById("workOrderFormPanel").classList.add("hidden");
+            window.ktekShowWorkOrdersJournal();
+            window.ktekOpenModal("workOrdersModal");
+        });
+
+        document.getElementById("btnCreateWorkOrder").addEventListener("click", () => {
+            if (!isWorkOrderAdmin()) return;
+            setDefaultWorkOrderDueDate();
+            document.getElementById("workOrderFormPanel").classList.toggle("hidden");
+            if (!document.getElementById("workOrderFormPanel").classList.contains("hidden")) {
+                document.getElementById("workOrderTitleInput").focus();
+            }
+        });
+
+        document.getElementById("btnCancelWorkOrder").addEventListener("click", () => {
+            document.getElementById("workOrderFormPanel").classList.add("hidden");
+        });
+
+        document.getElementById("workOrdersList").addEventListener("click", (event) => {
+            const card = event.target.closest("[data-work-order-id]");
+            if (card) openWorkOrderDetail(card.dataset.workOrderId);
+        });
+
+        document.getElementById("workOrderForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            if (!isWorkOrderAdmin()) {
+                showWorkOrderNotice("Создавать наряды может только администратор.", "error");
+                return;
+            }
+
+            const form = event.currentTarget;
+            const submitButton = form.querySelector('[type="submit"]');
+            submitButton.disabled = true;
+            try {
+                const newOrder = {
+                    number: "Н-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-6),
+                    title: document.getElementById("workOrderTitleInput").value.trim(),
+                    brigade: document.getElementById("workOrderBrigadeInput").value,
+                    quantity: Number(document.getElementById("workOrderQuantityInput").value),
+                    unit: document.getElementById("workOrderUnitInput").value,
+                    dueDate: document.getElementById("workOrderDueDateInput").value,
+                    priority: document.getElementById("workOrderPriorityInput").value,
+                    description: document.getElementById("workOrderDescriptionInput").value.trim(),
+                    status: "open",
+                    createdAt: new Date().toISOString(),
+                    author: currentUserProfile?.email || "Admin"
+                };
+                await push(ref(fbDb, "work_orders"), newOrder);
+                form.reset();
+                setDefaultWorkOrderDueDate();
+                document.getElementById("workOrderFormPanel").classList.add("hidden");
+                showWorkOrderNotice("Наряд создан и назначен бригаде.");
+            } catch (error) {
+                console.error("Work order create error:", error);
+                showWorkOrderNotice("Не удалось сохранить наряд. Проверьте доступ к базе.", "error");
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        document.getElementById("workOrderDetailContent").addEventListener("click", async (event) => {
+            const photoButton = event.target.closest("[data-remove-report-photo]");
+            if (photoButton) {
+                pendingReportPhotos.splice(Number(photoButton.dataset.removeReportPhoto), 1);
+                renderReportPhotoPreview();
+                return;
+            }
+
+            const actionButton = event.target.closest("[data-work-order-action]");
+            if (!actionButton) return;
+            const action = actionButton.dataset.workOrderAction;
+            if (action === "back") {
+                window.ktekShowWorkOrdersJournal();
+                return;
+            }
+            if (!activeWorkOrderId || !workOrdersData[activeWorkOrderId]) return;
+
+            if (action === "start" && isWorkOrderBrigade()) {
+                try {
+                    await update(ref(fbDb, "work_orders/" + activeWorkOrderId), {
+                        status: "in_progress",
+                        startedAt: new Date().toISOString(),
+                        startedBy: currentUserProfile?.email || currentUserProfile?.name || "Бригада"
+                    });
+                } catch (error) {
+                    console.error("Work order start error:", error);
+                    alert("Не удалось изменить статус наряда.");
+                }
+            }
+
+            if (action === "delete" && isWorkOrderAdmin()) {
+                if (!window.confirm("Удалить этот наряд и приложенный отчёт?")) return;
+                try {
+                    await remove(ref(fbDb, "work_orders/" + activeWorkOrderId));
+                    window.ktekShowWorkOrdersJournal();
+                    showWorkOrderNotice("Наряд удалён.");
+                } catch (error) {
+                    console.error("Work order delete error:", error);
+                    alert("Не удалось удалить наряд.");
+                }
+            }
+        });
+
+        document.getElementById("workOrderDetailContent").addEventListener("change", async (event) => {
+            if (event.target.id !== "workOrderPhotoInput") return;
+            const availableSlots = Math.max(0, 4 - pendingReportPhotos.length);
+            const files = Array.from(event.target.files || []).slice(0, availableSlots);
+            if (!availableSlots) {
+                alert("Можно приложить не более 4 фотографий.");
+                event.target.value = "";
+                return;
+            }
+
+            event.target.disabled = true;
+            try {
+                for (const file of files) {
+                    pendingReportPhotos.push(await compressWorkOrderImage(file));
+                    renderReportPhotoPreview();
+                }
+                if ((event.target.files || []).length > availableSlots) {
+                    alert("Добавлены первые " + availableSlots + " фото. Максимум — 4.");
+                }
+            } catch (error) {
+                alert(error.message || "Не удалось подготовить фотографию.");
+            } finally {
+                event.target.disabled = false;
+                event.target.value = "";
+            }
+        });
+
+        document.getElementById("workOrderDetailContent").addEventListener("submit", async (event) => {
+            if (event.target.id !== "workOrderReportForm") return;
+            event.preventDefault();
+            const order = workOrdersData[activeWorkOrderId];
+            if (!order || !isWorkOrderBrigade() || !workOrderBelongsToCurrentBrigade(order)) return;
+
+            const submitButton = event.target.querySelector('[type="submit"]');
+            submitButton.disabled = true;
+            try {
+                await update(ref(fbDb, "work_orders/" + activeWorkOrderId), {
+                    status: "completed",
+                    completedAt: new Date().toISOString(),
+                    report: {
+                        completedQuantity: Number(document.getElementById("workOrderCompletedQuantity").value),
+                        text: document.getElementById("workOrderReportText").value.trim(),
+                        photos: pendingReportPhotos,
+                        submittedAt: new Date().toISOString(),
+                        submittedBy: currentUserProfile?.email || currentUserProfile?.name || order.brigade
+                    }
+                });
+                alert("Отчёт отправлен администратору.");
+            } catch (error) {
+                console.error("Work order report error:", error);
+                alert("Не удалось отправить отчёт. Проверьте подключение к базе.");
+                submitButton.disabled = false;
+            }
+        });
+
+        // ── 4. ADDRESS AUTOCOMPLETE SEARCH ──
         window.ktekSearchAddress = function(query, target) {
             const dropdown = document.getElementById(target === 'incident' ? 'incAddressDropdown' : 'objAddressDropdown');
             if (!query || query.trim().length < 2) {
@@ -4237,6 +4989,23 @@
 
         // ── 7. FIREBASE REAL-TIME SYNC + DIGITAL TWIN HOOKS ──
         function listenFirebaseRealtime() {
+            if (!workOrdersListenerStarted) {
+                workOrdersListenerStarted = true;
+                onValue(ref(fbDb, "work_orders"), (snap) => {
+                    workOrdersData = snap.val() || {};
+                    renderWorkOrdersJournal();
+                    if (activeWorkOrderId && workOrdersData[activeWorkOrderId]) {
+                        renderWorkOrderDetail(activeWorkOrderId);
+                    } else if (activeWorkOrderId) {
+                        window.ktekShowWorkOrdersJournal();
+                    }
+                }, (error) => {
+                    console.error("Work orders sync error:", error);
+                    workOrdersListenerStarted = false;
+                    showWorkOrderNotice("Нет доступа к журналу нарядов.", "error");
+                });
+            }
+
             // A) INCIDENTS
             onValue(ref(fbDb, "incidents"), (snap) => {
                 const data = snap.val() || {};
