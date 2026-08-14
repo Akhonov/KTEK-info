@@ -2111,14 +2111,14 @@
                 if (!telemetry) return;
                 if (target.kind === "line") {
                     if (telemetry.status === "disconnected") {
-                        target.layer.setStyle({ ...target.baseStyle, color: "#7b8790", opacity: 0.42, dashArray: "5, 7" });
+                        target.layer.setStyle({ ...target.baseStyle, color: "#7b8790", opacity: 0.42, dashArray: null });
                         return;
                     }
                     target.baseStyle.color = telemetry.status === "critical"
                         ? "#e32626"
                         : temperatureColor(telemetry.supply);
                     target.baseStyle.opacity = telemetry.status === "critical" ? 1 : 0.88;
-                    target.layer.setStyle(target.baseStyle);
+                    target.layer.setStyle({ ...target.baseStyle, dashArray: null });
                 } else {
                     const element = target.layer.getElement();
                     element?.classList.toggle("telemetry-warning", telemetry.status === "warning");
@@ -4036,7 +4036,7 @@
                 activeDrawingPolyline = L.polyline(drawingPoints, {
                     color: "#f59e0b",
                     weight: 4,
-                    dashArray: "6, 6",
+                    dashArray: null,
                     opacity: 0.95
                 }).addTo(map);
 
@@ -4388,7 +4388,7 @@
                         const polyline = L.polyline(pipe.waypoints, {
                             color: color,
                             weight: customPipeObj.weight,
-                            dashArray: isPlanned ? "8, 8" : null,
+                            dashArray: null,
                             opacity: 0.92
                         }).addTo(networkLayer);
 
