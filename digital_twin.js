@@ -79,7 +79,7 @@
                     if (!Number.isFinite(parent.rootDistance)) return;
                     parent.downstreamLevels.forEach((rawLevel, targetId) => {
                         const target = this.models.get(targetId);
-                        if (!target || target.source || target.upstreamId) return;
+                        if (!target || target.source || target.upstreamId || target.topologyLocked) return;
                         const edgeLevel = Math.max(1, Number(rawLevel || 1));
                         const candidate = parent.rootDistance + edgeLevel;
                         if (candidate < target.rootDistance) {

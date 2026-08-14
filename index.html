@@ -2151,24 +2151,193 @@
             }
         }
 
+        function buildPhysicalTwinModels(data) {
+            const lines = data.lines || [];
+            const points = data.points || [];
+            const sources = (data.heatSources || []).filter(source => !deletedSourceIds.has(source.id));
+            if (!lines.length) return [];
+
+            const endpoints = lines.flatMap((line, lineIndex) => [
+                { lineIndex, position: line.coordinates[0] },
+                { lineIndex, position: line.coordinates[line.coordinates.length - 1] }
+            ]);
+            const parent = endpoints.map((_, index) => index);
+            const find = index => {
+                while (parent[index] !== index) {
+                    parent[index] = parent[parent[index]];
+                    index = parent[index];
+                }
+                return index;
+            };
+            const union = (first, second) => {
+                const firstRoot = find(first);
+                const secondRoot = find(second);
+                if (firstRoot !== secondRoot) parent[secondRoot] = firstRoot;
+            };
+
+            const endpointGrid = new Map();
+            const cellSize = 0.00012;
+            endpoints.forEach((endpoint, index) => {
+                const cellLat = Math.round(endpoint.position[0] / cellSize);
+                const cellLng = Math.round(endpoint.position[1] / cellSize);
+                for (let latOffset = -1; latOffset <= 1; latOffset += 1) {
+                    for (let lngOffset = -1; lngOffset <= 1; lngOffset += 1) {
+                        const nearby = endpointGrid.get(`${cellLat + latOffset}:${cellLng + lngOffset}`) || [];
+                        nearby.forEach(other => {
+                            if (map.distance(endpoint.position, endpoints[other].position) <= 12) union(index, other);
+                        });
+                    }
+                }
+                const key = `${cellLat}:${cellLng}`;
+                if (!endpointGrid.has(key)) endpointGrid.set(key, []);
+                endpointGrid.get(key).push(index);
+            });
+
+            const clusterMembers = new Map();
+            endpoints.forEach((endpoint, index) => {
+                const root = find(index);
+                if (!clusterMembers.has(root)) clusterMembers.set(root, []);
+                clusterMembers.get(root).push(endpoint.position);
+            });
+            const clusterIds = new Map([...clusterMembers.keys()].map((root, index) => [root, index]));
+            const nodePositions = [...clusterMembers.values()].map(members => [
+                members.reduce((sum, item) => sum + item[0], 0) / members.length,
+                members.reduce((sum, item) => sum + item[1], 0) / members.length
+            ]);
+            const lineNodes = lines.map((_, index) => [clusterIds.get(find(index * 2)), clusterIds.get(find(index * 2 + 1))]);
+            const linesByNode = new Map();
+            lineNodes.forEach((nodes, lineIndex) => nodes.forEach(node => {
+                if (!linesByNode.has(node)) linesByNode.set(node, []);
+                linesByNode.get(node).push(lineIndex);
+            }));
+
+            const upstreamById = new Map();
+            const depthById = new Map();
+            const distanceById = new Map();
+            const queue = [];
+            sources.forEach(source => {
+                let nearestNode = null;
+                let nearestDistance = Infinity;
+                nodePositions.forEach((position, node) => {
+                    const distance = map.distance([source.lat, source.lng], position);
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearestNode = node;
+                    }
+                });
+                if (nearestNode === null || nearestDistance > 45) return;
+                (linesByNode.get(nearestNode) || []).forEach(lineIndex => {
+                    const lineId = lines[lineIndex].id;
+                    if (upstreamById.has(lineId)) return;
+                    upstreamById.set(lineId, source.id);
+                    depthById.set(lineId, 1);
+                    distanceById.set(lineId, nearestDistance);
+                    queue.push(lineIndex);
+                });
+            });
+
+            for (let cursor = 0; cursor < queue.length; cursor += 1) {
+                const lineIndex = queue[cursor];
+                const line = lines[lineIndex];
+                lineNodes[lineIndex].forEach(node => {
+                    (linesByNode.get(node) || []).forEach(nextIndex => {
+                        const nextLine = lines[nextIndex];
+                        if (upstreamById.has(nextLine.id)) return;
+                        upstreamById.set(nextLine.id, line.id);
+                        depthById.set(nextLine.id, (depthById.get(line.id) || 0) + 1);
+                        distanceById.set(nextLine.id, 12);
+                        queue.push(nextIndex);
+                    });
+                });
+            }
+
+            const connectedNodes = new Set();
+            lines.forEach((line, index) => {
+                if (upstreamById.has(line.id)) lineNodes[index].forEach(node => connectedNodes.add(node));
+            });
+            points.forEach(point => {
+                let nearestNode = null;
+                let nearestDistance = Infinity;
+                connectedNodes.forEach(node => {
+                    const distance = map.distance([point.lat, point.lng], nodePositions[node]);
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearestNode = node;
+                    }
+                });
+                if (nearestNode === null || nearestDistance > 60) return;
+                const upstreamLineIndex = (linesByNode.get(nearestNode) || [])
+                    .filter(index => upstreamById.has(lines[index].id))
+                    .sort((a, b) => (depthById.get(lines[a].id) || Infinity) - (depthById.get(lines[b].id) || Infinity))[0];
+                if (upstreamLineIndex === undefined) return;
+                upstreamById.set(point.id, lines[upstreamLineIndex].id);
+                depthById.set(point.id, (depthById.get(lines[upstreamLineIndex].id) || 0) + 1);
+                distanceById.set(point.id, nearestDistance);
+            });
+
+            const children = new Map();
+            upstreamById.forEach((upstreamId, objectId) => {
+                if (!children.has(upstreamId)) children.set(upstreamId, []);
+                children.get(upstreamId).push(objectId);
+            });
+            const downstreamCache = new Map();
+            const collectDownstream = objectId => {
+                if (downstreamCache.has(objectId)) return downstreamCache.get(objectId);
+                const result = [];
+                const stack = (children.get(objectId) || []).map(id => ({ id, level: 1 }));
+                while (stack.length) {
+                    const current = stack.pop();
+                    result.push(current);
+                    (children.get(current.id) || []).forEach(id => stack.push({ id, level: current.level + 1 }));
+                }
+                downstreamCache.set(objectId, result);
+                return result;
+            };
+
+            const lineModels = lines.map(object => ({
+                id: object.id,
+                name: object.name,
+                type: "Участок тепловой сети",
+                topologyLocked: true,
+                connected: upstreamById.has(object.id),
+                upstreamId: upstreamById.get(object.id) || null,
+                connectionDistanceM: distanceById.get(object.id) || 0,
+                hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
+                downstreamObjects: collectDownstream(object.id)
+            }));
+            const pointModels = points.map(object => ({
+                id: object.id,
+                name: object.name,
+                type: "Объект тепловой сети",
+                topologyLocked: true,
+                connected: upstreamById.has(object.id),
+                upstreamId: upstreamById.get(object.id) || null,
+                connectionDistanceM: distanceById.get(object.id) || 0,
+                hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
+                downstreamObjects: []
+            }));
+            const sourceModels = sources.map(object => ({
+                id: object.id,
+                name: object.name,
+                type: "Теплоисточник",
+                isHeatSource: true,
+                topologyLocked: true,
+                connected: true,
+                hasActiveDefect: false,
+                downstreamObjects: collectDownstream(object.id)
+            }));
+            console.info("Physical twin topology", {
+                connectedLines: lineModels.filter(model => model.connected).length,
+                disconnectedLines: lineModels.filter(model => !model.connected).length,
+                connectedObjects: pointModels.filter(model => model.connected).length,
+                disconnectedObjects: pointModels.filter(model => !model.connected).length
+            });
+            return [...lineModels, ...pointModels, ...sourceModels];
+        }
+
         function initializeDigitalTwin(data) {
             digitalTwin = new window.DigitalTwinEngine({ intervalMs: 1500 });
-            const models = [
-                ...data.lines.map(object => ({
-                    id: object.id, name: object.name, type: "Участок тепловой сети",
-                    hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
-                    downstreamObjects: object.downstreamObjects || []
-                })),
-                ...data.points.map(object => ({
-                    id: object.id, name: object.name, type: "Объект тепловой сети",
-                    hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
-                    downstreamObjects: object.downstreamObjects || []
-                })),
-                ...(data.heatSources || []).filter(source => !deletedSourceIds.has(source.id)).map(object => ({
-                    id: object.id, name: object.name, type: "Теплоисточник", isHeatSource: true, hasActiveDefect: false,
-                    downstreamObjects: object.downstreamObjects || []
-                }))
-            ];
+            const models = buildPhysicalTwinModels(data);
             digitalTwin.subscribe(renderTwinSnapshot);
             digitalTwin.register(models);
             digitalTwin.start();
@@ -3372,6 +3541,8 @@
             (window.ktekSelectableObjects || []).forEach(target => {
                 if (target.kind !== "line" || !target.layer?.getLatLngs) return;
                 if (target.editorOrigin === "base" && deletedBaseObjectIds.has(target.object.id)) return;
+                const lineTwin = twinSnapshot?.objects?.get?.(target.object.id);
+                if (lineTwin && !lineTwin.connected) return;
                 const points = target.layer.getLatLngs().flat(Infinity).filter(item => Number.isFinite(item?.lat) && Number.isFinite(item?.lng));
                 for (let i = 0; i < points.length - 1; i++) {
                     const distance = getDistanceToSegmentM(point, points[i], points[i + 1]);
