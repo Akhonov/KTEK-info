@@ -119,6 +119,19 @@
         body.is-editing-sources .source-edit-status { background: #fff1e9; color: #c34c11; }
         body.is-editing-sources .source-edit-status::before { background: #ff6b24; box-shadow: 0 0 0 4px rgba(255,107,36,.15); }
 
+        .source-edit-selection {
+            min-height: 42px;
+            margin-bottom: 10px;
+            padding: 9px 11px;
+            border: 1px solid #e1e7ea;
+            border-radius: 10px;
+            background: #fafcfc;
+            color: #68777e;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .source-edit-selection strong { display: block; color: #172229; font-size: 12px; }
         .source-edit-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .source-edit-action {
             min-height: 39px;
@@ -134,7 +147,18 @@
         }
 
         .source-edit-action.primary { grid-column: 1 / -1; background: #ff6b24; color: #fff; }
+        .source-edit-action.is-active { background: #6d28d9; color: #fff; box-shadow: 0 4px 12px rgba(109,40,217,.22); }
+        .source-edit-action.danger { background: #fff0ef; color: #c62c21; }
+        .source-edit-action:disabled { opacity: .45; cursor: not-allowed; filter: none; }
         .source-edit-action:hover { filter: brightness(.96); }
+
+        body.is-editing-network .leaflet-container { cursor: crosshair; }
+        .editor-selected .map-marker__outer,
+        .editor-selected .heat-source-marker__pin {
+            filter: drop-shadow(0 0 8px #ff6b24);
+            outline: 3px solid rgba(255,255,255,.95);
+            outline-offset: 3px;
+        }
 
         .heat-source-delete {
             width: 100%;
@@ -159,6 +183,8 @@
         body.dark .source-edit-panel { background: rgba(37, 46, 51, .98); border-color: #46545b; }
         body.dark .source-edit-panel h2 { color: #fff; }
         body.dark .source-edit-panel p { color: #b7c1c6; }
+        body.dark .source-edit-selection { background: #1d292e; border-color: #46545b; color: #aab7bd; }
+        body.dark .source-edit-selection strong { color: #fff; }
 
         .twin-control { position: relative; }
 
@@ -1622,7 +1648,7 @@
         </div>
     </div>
 
-    <!-- ===== MODAL: ДОБАВЛЕНИЕ КОТЛА / ОБЪЕКТА ===== -->
+    <!-- ===== MODAL: ДОБАВЛЕНИЕ ОБЪЕКТА ТЕПЛОВОЙ СЕТИ ===== -->
     <div id="addObjectModal" class="ktek-modal-overlay hidden">
         <div class="ktek-modal-card">
             <div class="ktek-modal-header">
@@ -1630,7 +1656,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
                         <path d="M4 21V10l7 3V7l7 3V3h2v18H4z"></path>
                     </svg>
-                    Добавление теплоисточника / котла
+                    Новый объект тепловой сети
                 </h3>
                 <button onclick="window.ktekCloseModal('addObjectModal')" class="ktek-modal-close">✕</button>
             </div>
@@ -1641,12 +1667,18 @@
                 </div>
                 <div class="ktek-grid-2" style="margin-bottom:12px;">
                     <div>
-                        <label class="ktek-form-label">Тип источника</label>
+                        <label class="ktek-form-label">Тип объекта</label>
                         <select id="objTypeInput" class="ktek-input">
-                            <option value="bmk">БМК (Блочно-модульная)</option>
-                            <option value="boiler">Котлоагрегат ТЭЦ</option>
+                            <option value="boiler">Котельная / ТЭЦ</option>
+                            <option value="bmk">БМК (блочно-модульная котельная)</option>
                             <option value="pump">ПНС (Насосная станция)</option>
                             <option value="ctp">ЦТП / Теплопункт</option>
+                            <option value="chamber">Тепловая камера</option>
+                            <option value="valve">Запорная арматура</option>
+                            <option value="meter">Узел учёта</option>
+                            <option value="compensator">Компенсатор</option>
+                            <option value="drain">Дренажный узел</option>
+                            <option value="consumer">Ввод потребителя</option>
                         </select>
                     </div>
                     <div>
@@ -1686,7 +1718,7 @@
                 </div>
                 <div style="background:rgba(147,51,234,0.12);padding:10px;border-radius:9px;border:1px solid rgba(147,51,234,0.3);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
                     <input type="checkbox" id="objAutoDrawPipe" checked style="width:16px;height:16px;" />
-                    <label for="objAutoDrawPipe" style="font-size:11px;color:#e9d5ff;cursor:pointer;">Сразу начать прокладку теплотрассы от этого котла</label>
+                    <label for="objAutoDrawPipe" style="font-size:11px;color:#e9d5ff;cursor:pointer;">Сразу начать соединение от нового объекта</label>
                 </div>
                 <div style="display:flex;gap:8px;">
                     <button type="button" onclick="window.ktekCloseModal('addObjectModal')" style="flex:1;padding:10px;background:#334155;border:0;color:#cbd5e1;border-radius:9px;font-weight:700;cursor:pointer;">Отмена</button>
@@ -1816,19 +1848,23 @@
             </section>
         </div>
         <div class="source-editor" id="sourceEditor">
-            <button class="source-edit-toggle" id="sourceEditToggle" type="button" aria-label="Переместить котельные" aria-expanded="false">
+            <button class="source-edit-toggle" id="sourceEditToggle" type="button" aria-label="Редактор тепловой сети" aria-expanded="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12 2v20M2 12h20"></path><path d="m8 6 4-4 4 4M8 18l4 4 4-4M6 8l-4 4 4 4M18 8l4 4-4 4"></path>
+                    <path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
                 </svg>
             </button>
-            <section class="source-edit-panel" id="sourceEditPanel" aria-label="Редактор котельных">
-                <h2>Расстановка котельных</h2>
-                <p>Включите режим и перетаскивайте значки. Чтобы удалить котельную, нажмите на неё и выберите красную кнопку в справке.</p>
-                <div class="source-edit-status" id="sourceEditStatus">Режим перемещения выключен</div>
+            <section class="source-edit-panel" id="sourceEditPanel" aria-label="Редактор тепловой сети">
+                <h2>Редактор сети</h2>
+                <p>Добавляйте объекты, соединяйте их с реальными узлами и удаляйте выбранные элементы. Все изменения сохраняются в базе.</p>
+                <div class="source-edit-status" id="sourceEditStatus">Редактор выключен</div>
+                <div class="source-edit-selection" id="networkEditorSelection">Включите редактор, затем выберите объект на карте.</div>
                 <div class="source-edit-actions">
-                    <button class="source-edit-action primary" id="sourceEditMode" type="button">Включить перемещение</button>
-                    <button class="source-edit-action" id="sourceExport" type="button">Скачать координаты</button>
-                    <button class="source-edit-action" id="sourceReset" type="button">Сбросить правки</button>
+                    <button class="source-edit-action primary" id="sourceEditMode" type="button">Включить редактор</button>
+                    <button class="source-edit-action" id="networkEditorAdd" type="button">+ Добавить объект</button>
+                    <button class="source-edit-action" id="networkEditorConnect" type="button">Соединить объекты</button>
+                    <button class="source-edit-action danger" id="networkEditorDelete" type="button" disabled>Удалить выбранное</button>
+                    <button class="source-edit-action" id="sourceReset" type="button">Восстановить скрытые</button>
+                    <button class="source-edit-action" id="sourceExport" type="button">Скачать JSON</button>
                 </div>
             </section>
         </div>
@@ -2010,6 +2046,8 @@
         const searchLocationLayer = L.layerGroup().addTo(map);
         const heatSourcesLayer = L.layerGroup().addTo(map);
         const objectsLayer = L.layerGroup().addTo(map);
+        window.ktekSelectableObjects = selectableObjects;
+        window.ktekEditorLayers = { networkLayer, heatSourcesLayer, objectsLayer };
 
         const card = document.getElementById("objectCard");
         const cardHeader = document.getElementById("cardHeader");
@@ -2224,6 +2262,7 @@
             });
             updateSourceEditStatus();
         }
+        window.ktekSetSourceDragMode = setSourceEditMode;
 
         function exportSourcePositions() {
             const positions = allHeatSources.map(source => {
@@ -2773,7 +2812,9 @@
                     object: line,
                     type: "Участок тепловой сети",
                     layer: polyline,
-                    baseStyle
+                    baseStyle,
+                    editorGroup: networkLayer,
+                    editorOrigin: "base"
                 });
                 const lineTarget = selectableObjects[selectableObjects.length - 1];
 
@@ -2785,6 +2826,7 @@
                 });
                 polyline.on("click", event => {
                     if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+                    if (window.ktekEditorHandleTarget?.(lineTarget)) return;
                     openCard(line, "Участок тепловой сети", polyline);
                 });
                 polyline.on("mouseover", () => {
@@ -2824,7 +2866,9 @@
                     object: source,
                     type: "Теплоисточник",
                     layer: marker,
-                    latlng: L.latLng(source.lat, source.lng)
+                    latlng: L.latLng(source.lat, source.lng),
+                    editorGroup: heatSourcesLayer,
+                    editorOrigin: "base"
                 });
                 const sourceTarget = selectableObjects[selectableObjects.length - 1];
                 heatSourceEntries.set(source.id, { source, marker, target: sourceTarget });
@@ -2835,6 +2879,7 @@
                 });
                 marker.on("click", event => {
                     if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+                    if (window.ktekEditorHandleTarget?.(sourceTarget)) return;
                     openCard(source, "Теплоисточник", marker);
                 });
                 marker.on("mouseover", () => {
@@ -2858,6 +2903,7 @@
                     sourcePositionOverrides[source.id] = { lat: source.lat, lng: source.lng };
                     marker.setIcon(heatSourceIcon(source));
                     persistSourcePositions();
+                    window.ktekPersistBaseObjectPosition?.(source.id, source.name, source.lat, source.lng);
                 });
                 bounds.push([source.lat, source.lng]);
             });
@@ -2873,7 +2919,9 @@
                     object,
                     type: "Объект тепловой сети",
                     layer: marker,
-                    latlng: L.latLng(object.lat, object.lng)
+                    latlng: L.latLng(object.lat, object.lng),
+                    editorGroup: objectsLayer,
+                    editorOrigin: "base"
                 });
                 const pointTarget = selectableObjects[selectableObjects.length - 1];
 
@@ -2885,6 +2933,7 @@
                 });
                 marker.on("click", event => {
                     if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+                    if (window.ktekEditorHandleTarget?.(pointTarget)) return;
                     openCard(object, "Объект тепловой сети", marker);
                 });
                 marker.on("mouseover", () => {
@@ -2901,6 +2950,7 @@
             updateMapCounter();
             updateSourceEditStatus();
             initializeDigitalTwin(data);
+            window.ktekApplyEditorState?.();
         }
 
         document.getElementById("cardClose").addEventListener("click", closeCard);
@@ -2957,10 +3007,15 @@
             closeTwinPanel();
         });
         sourceEditPanel.addEventListener("click", event => event.stopPropagation());
-        sourceEditMode.addEventListener("click", () => setSourceEditMode(!sourceEditModeEnabled));
-        sourceExport.addEventListener("click", exportSourcePositions);
+        sourceEditMode.addEventListener("click", () => {
+            setSourceEditMode(!sourceEditModeEnabled);
+            window.ktekNetworkEditorSetEnabled?.(sourceEditModeEnabled);
+        });
+        sourceExport.addEventListener("click", () => {
+            if (!window.ktekExportNetworkEditor?.()) exportSourcePositions();
+        });
         sourceReset.addEventListener("click", () => {
-            if (window.confirm("Сбросить все вручную изменённые позиции котельных?")) resetSourcePositions();
+            window.ktekRestoreEditorObjects?.();
         });
 
         searchToggle.addEventListener("click", event => {
@@ -3033,7 +3088,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, get, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, get, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD4kVWah6OImJwTFUi2hKN5NdEEY6zfdcs",
@@ -3066,6 +3121,235 @@
         const customObjectMarkers = {};
         const customPipelineLayers = {};
         let customPipeLinesData = {};
+        let networkEditorEnabled = false;
+        let networkEditorAction = "select";
+        let networkEditorSelected = null;
+        let networkEditorConnectionStart = null;
+        let deletedBaseObjectIds = new Set();
+        let baseObjectPositions = new Map();
+
+        const customObjectTypes = {
+            boiler: { label: "Котельная / ТЭЦ", color: "#ff6b24", source: true },
+            bmk: { label: "Блочно-модульная котельная", color: "#f97316", source: true },
+            pump: { label: "Насосная станция", color: "#0ea5e9" },
+            ctp: { label: "Центральный тепловой пункт", color: "#8b5cf6" },
+            chamber: { label: "Тепловая камера", color: "#d946ef" },
+            valve: { label: "Запорная арматура", color: "#ef4444" },
+            meter: { label: "Узел учёта", color: "#14b8a6" },
+            compensator: { label: "Компенсатор", color: "#64748b" },
+            drain: { label: "Дренажный узел", color: "#2563eb" },
+            consumer: { label: "Ввод потребителя", color: "#22c55e" }
+        };
+
+        const editorSelectionEl = document.getElementById("networkEditorSelection");
+        const editorDeleteBtn = document.getElementById("networkEditorDelete");
+        const editorConnectBtn = document.getElementById("networkEditorConnect");
+
+        function editorSafeKey(value) {
+            return String(value || "object").replace(/[.#$\[\]\/]/g, "_");
+        }
+
+        function editorTargetCenter(target) {
+            if (target.latlng) return L.latLng(target.latlng);
+            if (target.layer?.getLatLng) return target.layer.getLatLng();
+            if (target.layer?.getBounds) return target.layer.getBounds().getCenter();
+            return null;
+        }
+
+        function clearEditorSelectionStyle() {
+            if (!networkEditorSelected) return;
+            if (networkEditorSelected.kind === "line" && networkEditorSelected.baseStyle) {
+                networkEditorSelected.layer.setStyle(networkEditorSelected.baseStyle);
+            }
+            networkEditorSelected.layer.getElement?.()?.classList.remove("editor-selected");
+        }
+
+        function selectEditorTarget(target) {
+            clearEditorSelectionStyle();
+            networkEditorSelected = target;
+            if (target.kind === "line") {
+                target.layer.setStyle({ color: "#ff6b24", weight: (target.baseStyle?.weight || 4) + 3, opacity: 1 });
+            } else {
+                target.layer.getElement?.()?.classList.add("editor-selected");
+            }
+            editorSelectionEl.innerHTML = `<strong>${target.object.name || "Объект без названия"}</strong>${target.type || "Объект тепловой сети"}`;
+            editorDeleteBtn.disabled = false;
+        }
+
+        function updateNetworkEditorUi(message) {
+            document.body.classList.toggle("is-editing-network", networkEditorEnabled);
+            document.getElementById("sourceEditMode").textContent = networkEditorEnabled ? "Завершить редактирование" : "Включить редактор";
+            document.getElementById("sourceEditStatus").textContent = networkEditorEnabled
+                ? (networkEditorAction === "connect" ? "Соединение объектов · выберите два узла" : "Редактор включён · выберите объект")
+                : "Редактор выключен";
+            editorConnectBtn.classList.toggle("is-active", networkEditorEnabled && networkEditorAction === "connect");
+            if (message) editorSelectionEl.innerHTML = message;
+        }
+
+        window.ktekNetworkEditorSetEnabled = function(enabled) {
+            networkEditorEnabled = Boolean(enabled);
+            networkEditorAction = "select";
+            networkEditorConnectionStart = null;
+            if (!networkEditorEnabled) {
+                clearEditorSelectionStyle();
+                networkEditorSelected = null;
+                editorDeleteBtn.disabled = true;
+            }
+            updateNetworkEditorUi(networkEditorEnabled ? "Нажмите на любой объект или участок сети." : "Включите редактор, затем выберите объект на карте.");
+        };
+
+        window.ktekEditorHandleTarget = function(target) {
+            if (!networkEditorEnabled) return false;
+            selectEditorTarget(target);
+            if (networkEditorAction !== "connect") return true;
+            const center = editorTargetCenter(target);
+            if (!center) return true;
+            if (!networkEditorConnectionStart) {
+                networkEditorConnectionStart = target;
+                editorSelectionEl.innerHTML = `<strong>Начало: ${target.object.name}</strong>Теперь выберите конечный реальный или добавленный объект.`;
+                return true;
+            }
+            if (networkEditorConnectionStart === target) {
+                editorSelectionEl.innerHTML = `<strong>Это уже начальная точка</strong>Выберите другой объект.`;
+                return true;
+            }
+            const start = networkEditorConnectionStart;
+            const startCenter = editorTargetCenter(start);
+            const distance = Math.round(map.distance(startCenter, center));
+            const pipe = {
+                name: `Связь: ${start.object.name} — ${target.object.name}`,
+                sourceName: start.object.name,
+                sourceId: start.object.id,
+                destinationName: target.object.name,
+                destinationId: target.object.id,
+                diameter: 219,
+                status: "active",
+                lengthM: distance,
+                waypoints: [[startCenter.lat, startCenter.lng], [center.lat, center.lng]],
+                connectedHouses: [],
+                connectedHousesCount: 0,
+                createdAt: new Date().toISOString(),
+                author: currentUserProfile?.email || "Admin",
+                createdWith: "network-editor"
+            };
+            push(ref(fbDb, "custom_pipelines"), pipe).then(() => {
+                networkEditorConnectionStart = null;
+                networkEditorAction = "select";
+                updateNetworkEditorUi(`<strong>Соединение сохранено</strong>${start.object.name} — ${target.object.name} · ${distance} м`);
+            }).catch(error => {
+                console.error("Connection save error:", error);
+                editorSelectionEl.innerHTML = "Не удалось сохранить соединение. Проверьте доступ к базе.";
+            });
+            return true;
+        };
+
+        window.ktekApplyEditorState = function() {
+            (window.ktekSelectableObjects || []).forEach(target => {
+                if (target.editorOrigin !== "base" || !target.editorGroup) return;
+                const position = baseObjectPositions.get(target.object.id);
+                if (position && target.kind === "point" && target.layer?.setLatLng) {
+                    const latlng = L.latLng(Number(position.lat), Number(position.lng));
+                    target.layer.setLatLng(latlng);
+                    target.latlng = latlng;
+                    target.object.lat = latlng.lat;
+                    target.object.lng = latlng.lng;
+                    target.object.accuracy = "manual";
+                }
+                const hidden = deletedBaseObjectIds.has(target.object.id);
+                if (hidden && target.editorGroup.hasLayer(target.layer)) target.editorGroup.removeLayer(target.layer);
+                if (!hidden && !target.editorGroup.hasLayer(target.layer)) target.editorGroup.addLayer(target.layer);
+            });
+        };
+
+        window.ktekPersistBaseObjectPosition = function(objectId, name, lat, lng) {
+            return set(ref(fbDb, `editor_object_positions/${editorSafeKey(objectId)}`), {
+                objectId,
+                name,
+                lat: Number(lat),
+                lng: Number(lng),
+                updatedAt: new Date().toISOString(),
+                author: currentUserProfile?.email || "Admin"
+            }).catch(error => console.error("Position save error:", error));
+        };
+
+        window.ktekRestoreEditorObjects = async function() {
+            if (!window.confirm("Восстановить все скрытые исходные объекты? Добавленные объекты останутся на карте.")) return;
+            await remove(ref(fbDb, "editor_deleted_objects"));
+            deletedBaseObjectIds = new Set();
+            window.ktekApplyEditorState();
+            updateNetworkEditorUi("<strong>Исходные объекты восстановлены</strong>Добавленные объекты и связи не изменены.");
+        };
+
+        window.ktekExportNetworkEditor = function() {
+            const objects = (window.ktekSelectableObjects || []).map(target => {
+                const center = editorTargetCenter(target);
+                const coordinates = target.kind === "line" && target.layer?.getLatLngs
+                    ? target.layer.getLatLngs().flat(Infinity).filter(point => point?.lat).map(point => [point.lat, point.lng])
+                    : (center ? [center.lat, center.lng] : null);
+                return {
+                    id: target.object.id,
+                    name: target.object.name,
+                    type: target.type,
+                    origin: target.editorOrigin || "base",
+                    deleted: deletedBaseObjectIds.has(target.object.id),
+                    coordinates
+                };
+            });
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                author: currentUserProfile?.email || "Admin",
+                hiddenBaseObjects: [...deletedBaseObjectIds],
+                objects
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `ktek_network_editor_${new Date().toISOString().slice(0, 10)}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            return true;
+        };
+
+        document.getElementById("networkEditorAdd").addEventListener("click", () => {
+            if (!networkEditorEnabled) {
+                window.ktekSetSourceDragMode?.(true);
+                window.ktekNetworkEditorSetEnabled(true);
+            }
+            window.ktekOpenModal("addObjectModal");
+        });
+
+        editorConnectBtn.addEventListener("click", () => {
+            if (!networkEditorEnabled) {
+                window.ktekSetSourceDragMode?.(true);
+                networkEditorEnabled = true;
+            }
+            networkEditorAction = networkEditorAction === "connect" ? "select" : "connect";
+            networkEditorConnectionStart = null;
+            updateNetworkEditorUi(networkEditorAction === "connect"
+                ? "<strong>Шаг 1 из 2</strong>Выберите начальный объект на карте."
+                : "Нажмите на любой объект или участок сети.");
+        });
+
+        editorDeleteBtn.addEventListener("click", async () => {
+            const target = networkEditorSelected;
+            if (!target || !window.confirm(`Удалить «${target.object.name}» с карты?`)) return;
+            if (target.firebaseCollection && target.firebaseKey) {
+                await remove(ref(fbDb, `${target.firebaseCollection}/${target.firebaseKey}`));
+            } else {
+                await set(ref(fbDb, `editor_deleted_objects/${editorSafeKey(target.object.id)}`), {
+                    objectId: target.object.id,
+                    name: target.object.name,
+                    type: target.type,
+                    deletedAt: new Date().toISOString(),
+                    author: currentUserProfile?.email || "Admin"
+                });
+            }
+            clearEditorSelectionStyle();
+            networkEditorSelected = null;
+            editorDeleteBtn.disabled = true;
+            updateNetworkEditorUi("<strong>Объект удалён</strong>Изменение сохранено в базе.");
+        });
 
         function getDistanceToSegmentM(p, v, w) {
             const pPt = map.latLngToLayerPoint(p);
@@ -3242,6 +3526,7 @@
             const btnIncident = document.getElementById("btnOpenAddIncident");
             const btnBoiler = document.getElementById("btnOpenAddObject");
             const btnPipe = document.getElementById("btnStartDrawPipe");
+            const networkEditor = document.getElementById("sourceEditor");
 
             if (user) {
                 // Do not block the authenticated operator on a slow profile query.
@@ -3271,18 +3556,21 @@
                     btnIncident.hidden = false;
                     btnBoiler.hidden = false;
                     btnPipe.hidden = false;
+                    networkEditor.hidden = false;
                 } else if (profile.role === "dispatcher") {
                     badge.textContent = "Диспетчер";
                     badge.className = "user-role-tag dispatcher";
                     btnIncident.hidden = false;
                     btnBoiler.hidden = false;
                     btnPipe.hidden = false;
+                    networkEditor.hidden = false;
                 } else {
                     badge.textContent = profile.name || "Бригада";
                     badge.className = "user-role-tag brigade";
                     btnIncident.hidden = true;
                     btnBoiler.hidden = true;
                     btnPipe.hidden = true;
+                    networkEditor.hidden = true;
                 }
 
                 listenFirebaseRealtime();
@@ -3342,7 +3630,7 @@
             document.getElementById("mapPickBanner").classList.remove("hidden");
             document.getElementById("mapPickBannerText").textContent = mode === 'incident'
                 ? "Кликните на карту в месте аварии / порыва"
-                : "Кликните на карту в месте размещения котла / БМК";
+                : "Кликните на карту в месте размещения объекта тепловой сети";
         };
 
         window.ktekCancelMapPick = () => {
@@ -3718,12 +4006,17 @@
                 const data = snap.val() || {};
                 Object.values(customObjectMarkers).forEach(m => map.removeLayer(m));
                 for (let k in customObjectMarkers) delete customObjectMarkers[k];
+                for (let i = selectableObjects.length - 1; i >= 0; i--) {
+                    if (selectableObjects[i].editorOrigin === "custom-object") selectableObjects.splice(i, 1);
+                }
 
                 Object.keys(data).forEach(id => {
                     const obj = data[id];
                     if (obj.lat && obj.lng) {
                         const isPlanned = obj.status === 'planned';
-                        const safe = isPlanned ? "#eab308" : "#8b5cf6";
+                        const typeConfig = customObjectTypes[obj.type] || customObjectTypes.chamber;
+                        const isHeatSource = Boolean(typeConfig.source);
+                        const safe = isPlanned ? "#eab308" : typeConfig.color;
 
                         const customSourceObj = {
                             id: "custom_" + id,
@@ -3732,35 +4025,29 @@
                             address: obj.address || "г. Костанай",
                             lat: obj.lat,
                             lng: obj.lng,
-                            type: "Теплоисточник",
-                            isHeatSource: true,
+                            type: typeConfig.label,
+                            isHeatSource,
                             color: safe,
                             accuracy: "manual",
-                            folder: isPlanned ? "Проектируемые котельные" : "Действующие котельные",
+                            folder: isPlanned ? "Проектируемые объекты" : "Добавленные объекты сети",
                             description: `Мощность: ${obj.power || '20 Гкал/ч'}, Расход: ${obj.flow || '400 т/ч'}, Режим: ${isPlanned ? 'В планах (Моделирование)' : 'В работе'}`,
                             defects: []
                         };
 
-                        const icon = L.divIcon({
-                            className: `heat-source-marker${isPlanned ? ' is-approximate' : ''}`,
-                            html: `<span class="heat-source-marker__pin" style="--source-color:${safe};">
-                                <span class="heat-source-marker__icon">
-                                    <svg viewBox="0 0 32 32" fill="none"><path d="M4 27V14l8 4v-5l7 4V7h5v12l4 2v6H4Z" fill="currentColor"/><path d="M8 23h3m3 0h3m3 0h3M22 4h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-                                </span>
-                            </span><span class="heat-source-marker__label">${customSourceObj.shortName}</span>`,
-                            iconSize: [48, 48],
-                            iconAnchor: [24, 24],
-                            tooltipAnchor: [0, -28]
-                        });
-
-                        const marker = L.marker([obj.lat, obj.lng], { icon, title: obj.name }).addTo(heatSourcesLayer);
+                        const icon = isHeatSource ? heatSourceIcon(customSourceObj) : markerIcon(customSourceObj);
+                        const targetGroup = isHeatSource ? heatSourcesLayer : objectsLayer;
+                        const marker = L.marker([obj.lat, obj.lng], { icon, title: obj.name }).addTo(targetGroup);
 
                         const target = {
                             kind: "point",
                             object: customSourceObj,
-                            type: "Теплоисточник",
+                            type: typeConfig.label,
                             layer: marker,
-                            latlng: L.latLng(obj.lat, obj.lng)
+                            latlng: L.latLng(obj.lat, obj.lng),
+                            editorGroup: targetGroup,
+                            editorOrigin: "custom-object",
+                            firebaseCollection: "custom_objects",
+                            firebaseKey: id
                         };
 
                         selectableObjects.push(target);
@@ -3768,7 +4055,8 @@
 
                         marker.on("click", (event) => {
                             if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
-                            openCard(customSourceObj, "Теплоисточник", marker);
+                            if (window.ktekEditorHandleTarget?.(target)) return;
+                            openCard(customSourceObj, typeConfig.label, marker);
                             const drawBtn = document.getElementById("btnDrawPipeFromCard");
                             if (drawBtn) drawBtn.hidden = false;
                         });
@@ -3777,7 +4065,7 @@
                             digitalTwin.registerObject({
                                 id: customSourceObj.id,
                                 name: customSourceObj.name,
-                                type: "Теплоисточник",
+                                type: typeConfig.label,
                                 hasActiveDefect: false,
                                 downstreamObjects: []
                             });
@@ -3791,6 +4079,9 @@
                 const data = snap.val() || {};
                 Object.values(customPipelineLayers).forEach(l => map.removeLayer(l));
                 for (let k in customPipelineLayers) delete customPipelineLayers[k];
+                for (let i = selectableObjects.length - 1; i >= 0; i--) {
+                    if (selectableObjects[i].editorOrigin === "custom-pipeline") selectableObjects.splice(i, 1);
+                }
 
                 Object.keys(data).forEach(id => {
                     const pipe = data[id];
@@ -3820,7 +4111,11 @@
                             object: customPipeObj,
                             type: "Участок тепловой сети",
                             layer: polyline,
-                            baseStyle: { color, weight: customPipeObj.weight, opacity: 0.92 }
+                            baseStyle: { color, weight: customPipeObj.weight, opacity: 0.92 },
+                            editorGroup: networkLayer,
+                            editorOrigin: "custom-pipeline",
+                            firebaseCollection: "custom_pipelines",
+                            firebaseKey: id
                         };
 
                         selectableObjects.push(target);
@@ -3829,6 +4124,7 @@
                         customPipeLinesData[id] = pipe;
                         polyline.on("click", (event) => {
                             if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+                            if (window.ktekEditorHandleTarget?.(target)) return;
                             openCard(customPipeObj, "Участок тепловой сети", polyline);
                             if (pipe.connectedHouses && pipe.connectedHouses.length) {
                                 window.highlightPipelineHouses(id);
@@ -3846,6 +4142,22 @@
                         }
                     }
                 });
+            });
+
+            // D) PERSISTENT OVERLAY FOR REMOVED BASE OBJECTS
+            onValue(ref(fbDb, "editor_deleted_objects"), (snap) => {
+                const data = snap.val() || {};
+                deletedBaseObjectIds = new Set(Object.values(data).map(item => item.objectId).filter(Boolean));
+                window.ktekApplyEditorState();
+            });
+
+            // E) POSITIONS OF MOVED BASE OBJECTS
+            onValue(ref(fbDb, "editor_object_positions"), (snap) => {
+                const positions = Object.values(snap.val() || {});
+                baseObjectPositions = new Map(positions
+                    .filter(position => position.objectId && Number.isFinite(Number(position.lat)) && Number.isFinite(Number(position.lng)))
+                    .map(position => [position.objectId, position]));
+                window.ktekApplyEditorState();
             });
         }
 
