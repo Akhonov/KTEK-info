@@ -71,6 +71,44 @@
                 model.rootDistance = model.source ? 0 : Infinity;
             });
 
+            const resolveId = rawId => {
+                if (!rawId) return null;
+                if (this.models.has(rawId)) return rawId;
+                return [`custom_${rawId}`, `custom_pipe_${rawId}`].find(id => this.models.has(id)) || null;
+            };
+
+            // Physical and manually saved connections form one undirected graph.
+            // A node receives telemetry only when BFS can reach it from a heat source.
+            const adjacency = new Map([...this.models.keys()].map(id => [id, new Set()]));
+            this.models.forEach(model => {
+                (model.networkNeighbors || []).forEach(rawNeighborId => {
+                    const neighborId = resolveId(rawNeighborId);
+                    if (!neighborId || neighborId === model.id) return;
+                    adjacency.get(model.id).add(neighborId);
+                    adjacency.get(neighborId).add(model.id);
+                });
+            });
+            const queue = [];
+            this.models.forEach(model => {
+                if (!model.source || model.connected === false) return;
+                model.resolvedUpstreamId = null;
+                model.topologyLevel = 0;
+                model.rootDistance = 0;
+                queue.push(model.id);
+            });
+            for (let cursor = 0; cursor < queue.length; cursor += 1) {
+                const parentId = queue[cursor];
+                const parentModel = this.models.get(parentId);
+                adjacency.get(parentId).forEach(targetId => {
+                    const target = this.models.get(targetId);
+                    if (!target || target.source || target.connected === false || Number.isFinite(target.rootDistance)) return;
+                    target.resolvedUpstreamId = parentId;
+                    target.topologyLevel = 1;
+                    target.rootDistance = parentModel.rootDistance + 1;
+                    queue.push(targetId);
+                });
+            }
+
             // Multi-source relaxation builds an actual upstream chain through
             // pipes and chambers instead of assigning every node an isolated baseline.
             for (let pass = 0; pass < this.models.size; pass += 1) {

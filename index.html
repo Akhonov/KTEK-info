@@ -2213,6 +2213,21 @@
                 if (!linesByNode.has(node)) linesByNode.set(node, []);
                 linesByNode.get(node).push(lineIndex);
             }));
+            const networkNeighborsById = new Map();
+            const addNetworkNeighbor = (firstId, secondId) => {
+                if (!firstId || !secondId || firstId === secondId) return;
+                if (!networkNeighborsById.has(firstId)) networkNeighborsById.set(firstId, new Set());
+                if (!networkNeighborsById.has(secondId)) networkNeighborsById.set(secondId, new Set());
+                networkNeighborsById.get(firstId).add(secondId);
+                networkNeighborsById.get(secondId).add(firstId);
+            };
+            linesByNode.forEach(lineIndexes => {
+                lineIndexes.forEach((firstIndex, position) => {
+                    for (let next = position + 1; next < lineIndexes.length; next += 1) {
+                        addNetworkNeighbor(lines[firstIndex].id, lines[lineIndexes[next]].id);
+                    }
+                });
+            });
 
             const upstreamById = new Map();
             const depthById = new Map();
@@ -2231,6 +2246,7 @@
                 if (nearestNode === null || nearestDistance > sourceJoinToleranceM) return;
                 (linesByNode.get(nearestNode) || []).forEach(lineIndex => {
                     const lineId = lines[lineIndex].id;
+                    addNetworkNeighbor(source.id, lineId);
                     if (upstreamById.has(lineId)) return;
                     upstreamById.set(lineId, source.id);
                     depthById.set(lineId, 1);
@@ -2259,6 +2275,19 @@
                 if (upstreamById.has(line.id)) lineNodes[index].forEach(node => connectedNodes.add(node));
             });
             points.forEach(point => {
+                let physicalNode = null;
+                let physicalDistance = Infinity;
+                nodePositions.forEach((position, node) => {
+                    const distance = map.distance([point.lat, point.lng], position);
+                    if (distance < physicalDistance) {
+                        physicalDistance = distance;
+                        physicalNode = node;
+                    }
+                });
+                if (physicalNode !== null && physicalDistance <= objectJoinToleranceM) {
+                    (linesByNode.get(physicalNode) || []).forEach(lineIndex => addNetworkNeighbor(point.id, lines[lineIndex].id));
+                }
+
                 let nearestNode = null;
                 let nearestDistance = Infinity;
                 connectedNodes.forEach(node => {
@@ -2302,8 +2331,9 @@
                 name: object.name,
                 type: "Участок тепловой сети",
                 topologyLocked: true,
-                connected: upstreamById.has(object.id),
-                upstreamId: upstreamById.get(object.id) || null,
+                connected: true,
+                upstreamId: null,
+                networkNeighbors: [...(networkNeighborsById.get(object.id) || [])],
                 connectionDistanceM: distanceById.get(object.id) || 0,
                 hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
                 downstreamObjects: collectDownstream(object.id)
@@ -2313,8 +2343,9 @@
                 name: object.name,
                 type: "Объект тепловой сети",
                 topologyLocked: true,
-                connected: upstreamById.has(object.id),
-                upstreamId: upstreamById.get(object.id) || null,
+                connected: networkNeighborsById.has(object.id),
+                upstreamId: null,
+                networkNeighbors: [...(networkNeighborsById.get(object.id) || [])],
                 connectionDistanceM: distanceById.get(object.id) || 0,
                 hasActiveDefect: (object.defects || []).some(defect => !defect.resolved),
                 downstreamObjects: []
@@ -2326,6 +2357,7 @@
                 isHeatSource: true,
                 topologyLocked: true,
                 connected: true,
+                networkNeighbors: [...(networkNeighborsById.get(object.id) || [])],
                 hasActiveDefect: false,
                 downstreamObjects: collectDownstream(object.id)
             }));
@@ -3582,6 +3614,31 @@
             };
         }
 
+        function findNearestNetworkObjectId(position, excludedIds = new Set(), maximumDistanceM = 35) {
+            if (!position) return null;
+            const point = L.latLng(position);
+            let nearestId = null;
+            let nearestDistance = Infinity;
+            (window.ktekSelectableObjects || []).forEach(target => {
+                if (!target?.object?.id || excludedIds.has(target.object.id)) return;
+                let distance = Infinity;
+                if (target.kind === "line" && target.layer?.getLatLngs) {
+                    const coordinates = target.layer.getLatLngs().flat(Infinity).filter(item => Number.isFinite(item?.lat) && Number.isFinite(item?.lng));
+                    for (let i = 0; i < coordinates.length - 1; i += 1) {
+                        distance = Math.min(distance, getDistanceToSegmentM(point, coordinates[i], coordinates[i + 1]));
+                    }
+                } else {
+                    const targetPoint = editorTargetCenter(target);
+                    if (targetPoint) distance = map.distance(point, targetPoint);
+                }
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestId = target.object.id;
+                }
+            });
+            return nearestDistance <= maximumDistanceM ? nearestId : null;
+        }
+
         window.autoCaptureHousesAlongRoute = function(radiusM = 150) {
             if (drawingPoints.length < 2) {
                 alert("Сначала проложите линию трассы на карте!");
@@ -4286,7 +4343,7 @@
                                 name: customSourceObj.name,
                                 type: typeConfig.label,
                                 isHeatSource,
-                                connected: isHeatSource || obj.connectionStatus === "connected",
+                                connected: true,
                                 upstreamId: isHeatSource ? null : (telemetry.pipelineId || null),
                                 connectionDistanceM: telemetry.distanceM || 0,
                                 hasActiveDefect: false,
@@ -4321,6 +4378,12 @@
                             description: `Спроектированная трасса от ${pipe.sourceName || 'источника'}. Диаметр ф${pipe.diameter} мм, длина: ${pipe.lengthM} м.`,
                             defects: []
                         };
+                        const firstWaypoint = pipe.waypoints[0];
+                        const lastWaypoint = pipe.waypoints[pipe.waypoints.length - 1];
+                        const connectionSourceId = pipe.sourceId || findNearestNetworkObjectId(firstWaypoint);
+                        const connectionDestinationId = pipe.destinationId
+                            || findNearestNetworkObjectId(lastWaypoint, new Set(connectionSourceId ? [connectionSourceId] : []));
+                        const connectionNeighbors = [...new Set([connectionSourceId, connectionDestinationId].filter(Boolean))];
 
                         const polyline = L.polyline(pipe.waypoints, {
                             color: color,
@@ -4359,8 +4422,10 @@
                                 id: customPipeObj.id,
                                 name: customPipeObj.name,
                                 type: "Участок тепловой сети",
-                                connected: Boolean(pipe.sourceId),
-                                upstreamId: pipe.sourceId || null,
+                                topologyLocked: true,
+                                connected: connectionNeighbors.length > 0,
+                                upstreamId: null,
+                                networkNeighbors: connectionNeighbors,
                                 connectionDistanceM: pipe.lengthM || 0,
                                 hasActiveDefect: false,
                                 downstreamObjects: []
