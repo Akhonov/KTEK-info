@@ -1461,10 +1461,11 @@
         @media(max-width:520px){.ktek-login-card.login-premium.login-minimal{padding:30px 25px;border-radius:13px}.login-minimal-brand{padding-bottom:22px;margin-bottom:25px}}
 
         /* Map-first sign in */
-        .ktek-login-overlay{justify-content:flex-end;padding:32px clamp(28px,7vw,108px);background:rgba(7,15,18,.58);backdrop-filter:grayscale(.2) brightness(.72) blur(2px)}
+        .ktek-login-overlay{justify-content:center;padding:24px;background:rgba(7,15,18,.58);backdrop-filter:grayscale(.2) brightness(.72) blur(2px)}
         .ktek-login-card.login-premium.login-minimal{width:min(430px,100%);max-width:430px;padding:40px 42px 34px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#111d21;box-shadow:0 24px 70px rgba(0,0,0,.42);color:#eef3f4}
         .login-minimal-brand{padding-bottom:25px;margin-bottom:32px;border-color:#2a393e}
         .login-minimal-mark{width:40px;height:40px;border:0;border-radius:8px;background:#df622a;color:#fff}
+        .login-minimal-mark img{width:24px;height:24px;display:block}
         .login-minimal-brand strong{color:#fff;font-size:16px;letter-spacing:.035em}
         .login-minimal-brand span{color:#87989d;font-size:11px}
         .login-minimal .ktek-login-title{color:#f6f8f8;font-size:25px;font-weight:700}
@@ -1482,7 +1483,7 @@
         .login-minimal .login-security{margin-top:22px;color:#718287}
         .login-minimal .login-security svg{color:#dc7448}
         .login-minimal .login-submit-spinner{border-color:rgba(255,255,255,.28);border-top-color:#fff}
-        @media(max-width:700px){.ktek-login-overlay{justify-content:center;padding:14px;background:rgba(7,15,18,.7)}.ktek-login-card.login-premium.login-minimal{padding:32px 27px 28px}}
+        @media(max-width:700px){.ktek-login-overlay{padding:14px;background:rgba(7,15,18,.7)}.ktek-login-card.login-premium.login-minimal{padding:32px 27px 28px}}
 
     </style>
 </head>
@@ -1511,7 +1512,7 @@
     <!-- ===== FIREBASE AUTHENTICATION SCREEN ===== -->
     <div id="ktekLoginOverlay" class="ktek-login-overlay" role="dialog" aria-modal="true" aria-labelledby="ktekLoginTitle">
         <div class="ktek-login-card login-premium login-minimal">
-            <header class="login-minimal-brand"><span class="login-minimal-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9l5 3V8l5 3V5h4v8l2 1v5H4Z"/><path d="M8 16h2m3 0h2m2-14h3" stroke-linecap="round"/></svg></span><div><strong>КТЭК</strong><span>Тепловые сети · Костанай</span></div></header>
+            <header class="login-minimal-brand"><span class="login-minimal-mark"><img src="assets/ktek-buildings.svg" alt=""></span><div><strong>КТЭК</strong><span>Тепловые сети · Костанай</span></div></header>
             <section class="login-form-side">
                 <div class="ktek-login-head"><h1 class="ktek-login-title" id="ktekLoginTitle">Авторизация</h1><p class="ktek-login-sub">Войдите для доступа к диспетчерской карте.</p></div>
                 <form id="ktekLoginForm">
@@ -1520,7 +1521,6 @@
                     <div class="ktek-form-group"><label class="ktek-form-label" for="ktekLoginPassword">Пароль доступа</label><div class="login-input-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="ktekLoginPassword" type="password" class="ktek-input" placeholder="Введите пароль" required autocomplete="current-password" /><button class="login-password-toggle" id="ktekPasswordToggle" type="button" aria-label="Показать пароль"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg></button></div></div>
                     <button type="submit" id="ktekLoginSubmitBtn" class="ktek-btn-primary"><span>Войти</span></button>
                 </form>
-                <div class="login-security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span>Защищённое соединение</span></div>
             </section>
         </div>
     </div>
