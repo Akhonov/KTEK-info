@@ -24,6 +24,7 @@
             this.running = false;
             this.timer = null;
             this.lastSnapshot = null;
+            this.barrierBlockedIds = new Set();
         }
 
         register(objects) {
@@ -41,6 +42,7 @@
                 seed,
                 source,
                 connected: object.connected !== false,
+                operationalEnabled: object.operationalEnabled !== false && (!source || object.sourceEnabled !== false),
                 upstreamId: object.upstreamId || null,
                 connectionDistanceM: Number(object.connectionDistanceM || 0),
                 phase: (seed % 628) / 100,
@@ -64,11 +66,36 @@
             this.tick();
         }
 
+        setObjectEnabled(id, enabled) {
+            const model = this.models.get(id);
+            if (!model) return false;
+            model.operationalEnabled = Boolean(enabled);
+            this.rebuildTopology();
+            this.tick();
+            return true;
+        }
+
+        isObjectEnabled(id) {
+            const model = this.models.get(id);
+            return Boolean(model && model.operationalEnabled !== false);
+        }
+
+        setSourceEnabled(id, enabled) {
+            const model = this.models.get(id);
+            return Boolean(model?.source && this.setObjectEnabled(id, enabled));
+        }
+
+        isSourceEnabled(id) {
+            const model = this.models.get(id);
+            return Boolean(model?.source && this.isObjectEnabled(id));
+        }
+
         rebuildTopology() {
             this.models.forEach(model => {
                 model.resolvedUpstreamId = model.upstreamId || null;
-                model.topologyLevel = model.source ? 0 : Infinity;
-                model.rootDistance = model.source ? 0 : Infinity;
+                const activeSource = model.source && model.connected !== false && model.operationalEnabled !== false;
+                model.topologyLevel = activeSource ? 0 : Infinity;
+                model.rootDistance = activeSource ? 0 : Infinity;
             });
 
             const resolveId = rawId => {
@@ -88,9 +115,31 @@
                     adjacency.get(neighborId).add(model.id);
                 });
             });
+
+            // A chamber/valve can control outgoing branches without being a
+            // geometric segment itself. When it is closed, remove those flow
+            // edges before calculating reachability from active heat sources.
+            this.models.forEach(model => {
+                if (model.operationalEnabled !== false) return;
+                (model.isolationEdges || []).forEach(([rawFirstId, rawSecondId]) => {
+                    const firstId = resolveId(rawFirstId);
+                    const secondId = resolveId(rawSecondId);
+                    if (!firstId || !secondId) return;
+                    adjacency.get(firstId)?.delete(secondId);
+                    adjacency.get(secondId)?.delete(firstId);
+                });
+            });
+            this.barrierBlockedIds = new Set();
+            this.models.forEach(model => {
+                if (model.operationalEnabled !== false) return;
+                (model.isolationAffectedIds || []).forEach(rawId => {
+                    const affectedId = resolveId(rawId);
+                    if (affectedId && affectedId !== model.id) this.barrierBlockedIds.add(affectedId);
+                });
+            });
             const queue = [];
             this.models.forEach(model => {
-                if (!model.source || model.connected === false) return;
+                if (!model.source || model.connected === false || model.operationalEnabled === false || this.barrierBlockedIds.has(model.id)) return;
                 model.resolvedUpstreamId = null;
                 model.topologyLevel = 0;
                 model.rootDistance = 0;
@@ -101,7 +150,7 @@
                 const parentModel = this.models.get(parentId);
                 adjacency.get(parentId).forEach(targetId => {
                     const target = this.models.get(targetId);
-                    if (!target || target.source || target.connected === false || Number.isFinite(target.rootDistance)) return;
+                    if (!target || target.source || target.connected === false || target.operationalEnabled === false || this.barrierBlockedIds.has(target.id) || Number.isFinite(target.rootDistance)) return;
                     target.resolvedUpstreamId = parentId;
                     target.topologyLevel = 1;
                     target.rootDistance = parentModel.rootDistance + 1;
@@ -117,7 +166,7 @@
                     if (!Number.isFinite(parent.rootDistance)) return;
                     parent.downstreamLevels.forEach((rawLevel, targetId) => {
                         const target = this.models.get(targetId);
-                        if (!target || target.source || target.upstreamId || target.topologyLocked) return;
+                        if (!target || target.source || target.upstreamId || target.topologyLocked || target.operationalEnabled === false || this.barrierBlockedIds.has(target.id)) return;
                         const edgeLevel = Math.max(1, Number(rawLevel || 1));
                         const candidate = parent.rootDistance + edgeLevel;
                         if (candidate < target.rootDistance) {
@@ -135,7 +184,7 @@
             for (let pass = 0; pass < this.models.size; pass += 1) {
                 let changed = false;
                 this.models.forEach(model => {
-                    if (!model.upstreamId || Number.isFinite(model.rootDistance)) return;
+                    if (!model.upstreamId || model.operationalEnabled === false || this.barrierBlockedIds.has(model.id) || Number.isFinite(model.rootDistance)) return;
                     const upstream = this.models.get(model.upstreamId)
                         || this.models.get(`custom_${model.upstreamId}`)
                         || this.models.get(`custom_pipe_${model.upstreamId}`);
@@ -199,9 +248,56 @@
             let critical = 0;
             let affected = 0;
             const leakOrigin = this.scenario === "leak" ? this.models.get(this.focusId) : null;
+            const leakDownstreamLevels = new Map();
+            if (leakOrigin) {
+                const flowChildren = new Map();
+                this.models.forEach(model => {
+                    if (!model.resolvedUpstreamId) return;
+                    if (!flowChildren.has(model.resolvedUpstreamId)) flowChildren.set(model.resolvedUpstreamId, []);
+                    flowChildren.get(model.resolvedUpstreamId).push(model.id);
+                });
+                const queue = [];
+                const enqueue = (id, level) => {
+                    const model = this.models.get(id);
+                    if (!model || id === leakOrigin.id || model.operationalEnabled === false || this.barrierBlockedIds.has(id) || !Number.isFinite(model.rootDistance)) return;
+                    queue.push({ id, level });
+                };
+                (flowChildren.get(leakOrigin.id) || []).forEach(id => enqueue(id, 1));
+
+                // Chambers are telemetry points attached to a pipe, while the
+                // actual flow continues across the pipe junction they control.
+                // Start leak propagation on every outward line of that junction.
+                const junctionLineIds = [...new Set((leakOrigin.isolationEdges || []).flat())]
+                    .filter(id => this.models.has(id) && Number.isFinite(this.models.get(id).rootDistance));
+                if (junctionLineIds.length > 1) {
+                    const incomingId = junctionLineIds.reduce((bestId, id) =>
+                        this.models.get(id).rootDistance < this.models.get(bestId).rootDistance ? id : bestId);
+                    junctionLineIds.filter(id => id !== incomingId).forEach(id => enqueue(id, 1));
+                    (leakOrigin.isolationAffectedIds || []).forEach(id => enqueue(id, 1));
+                }
+
+                for (let cursor = 0; cursor < queue.length; cursor += 1) {
+                    const current = queue[cursor];
+                    if (leakDownstreamLevels.has(current.id) && leakDownstreamLevels.get(current.id) <= current.level) continue;
+                    leakDownstreamLevels.set(current.id, current.level);
+                    (flowChildren.get(current.id) || []).forEach(id => enqueue(id, current.level + 1));
+                }
+
+                // Preserve explicitly supplied downstream metadata for custom
+                // objects that do not yet have enough topology to form a chain.
+                if (!leakDownstreamLevels.size) {
+                    leakOrigin.downstreamLevels.forEach((level, id) => enqueue(id, Math.max(1, level)));
+                    for (let cursor = 0; cursor < queue.length; cursor += 1) {
+                        const current = queue[cursor];
+                        if (leakDownstreamLevels.has(current.id) && leakDownstreamLevels.get(current.id) <= current.level) continue;
+                        leakDownstreamLevels.set(current.id, current.level);
+                        (flowChildren.get(current.id) || []).forEach(id => enqueue(id, current.level + 1));
+                    }
+                }
+            }
             let connectedCount = 0;
 
-            const disconnectedTelemetry = model => ({
+            const disconnectedTelemetry = (model, status = "disconnected") => ({
                 id: model.id,
                 name: model.name,
                 type: model.type,
@@ -211,7 +307,7 @@
                 pressure: null,
                 flow: null,
                 power: null,
-                status: "disconnected",
+                status,
                 connected: false,
                 upstreamId: model.resolvedUpstreamId || null,
                 leakAffected: false,
@@ -222,8 +318,8 @@
 
             const calculateModel = (model, visiting = new Set()) => {
                 if (values.has(model.id)) return values.get(model.id);
-                if (visiting.has(model.id) || model.connected === false) {
-                    const telemetry = disconnectedTelemetry(model);
+                if (visiting.has(model.id) || model.connected === false || model.operationalEnabled === false || this.barrierBlockedIds.has(model.id)) {
+                    const telemetry = disconnectedTelemetry(model, model.operationalEnabled === false ? "shutdown" : "disconnected");
                     values.set(model.id, telemetry);
                     return telemetry;
                 }
@@ -249,7 +345,7 @@
                 const wave = Math.sin(seconds / 9 + model.phase);
                 const slowWave = Math.sin(seconds / 31 + model.phase * 0.47);
                 const isLeakTarget = this.scenario === "leak" && model.id === this.focusId;
-                const downstreamLevel = leakOrigin?.downstreamLevels.get(model.id);
+                const downstreamLevel = leakDownstreamLevels.get(model.id);
                 const isDownstreamAffected = Number.isFinite(downstreamLevel);
                 const leakAttenuation = isLeakTarget
                     ? 1
