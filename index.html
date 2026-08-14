@@ -1460,6 +1460,30 @@
         .login-minimal .login-security svg{color:#277c72}
         @media(max-width:520px){.ktek-login-card.login-premium.login-minimal{padding:30px 25px;border-radius:13px}.login-minimal-brand{padding-bottom:22px;margin-bottom:25px}}
 
+        /* Map-first sign in */
+        .ktek-login-overlay{justify-content:flex-end;padding:32px clamp(28px,7vw,108px);background:rgba(7,15,18,.58);backdrop-filter:grayscale(.2) brightness(.72) blur(2px)}
+        .ktek-login-card.login-premium.login-minimal{width:min(430px,100%);max-width:430px;padding:40px 42px 34px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#111d21;box-shadow:0 24px 70px rgba(0,0,0,.42);color:#eef3f4}
+        .login-minimal-brand{padding-bottom:25px;margin-bottom:32px;border-color:#2a393e}
+        .login-minimal-mark{width:40px;height:40px;border:0;border-radius:8px;background:#df622a;color:#fff}
+        .login-minimal-brand strong{color:#fff;font-size:16px;letter-spacing:.035em}
+        .login-minimal-brand span{color:#87989d;font-size:11px}
+        .login-minimal .ktek-login-title{color:#f6f8f8;font-size:25px;font-weight:700}
+        .login-minimal .ktek-login-sub{color:#91a0a4;font-size:12px}
+        .login-minimal .ktek-form-label{color:#c0cace;font-size:11px}
+        .login-minimal .ktek-input{height:48px;border-color:#34454a;border-radius:8px;background:#19272c;color:#f4f7f8}
+        .login-minimal .ktek-input::placeholder{color:#718288}
+        .login-minimal .ktek-input:focus{border-color:#e17343;background:#1b2b30;box-shadow:0 0 0 3px rgba(225,115,67,.12)}
+        .login-minimal .login-input-wrap>svg{color:#7f9196}
+        .login-minimal .login-password-toggle{color:#7f9196}
+        .login-minimal .login-password-toggle:hover{color:#e98a60;background:rgba(225,98,42,.1)}
+        .login-minimal .ktek-btn-primary{height:48px;margin-top:9px;border-radius:8px;background:#df622a;color:#fff;font-size:13px}
+        .login-minimal .ktek-btn-primary:hover{background:#c95320}
+        .login-minimal .ktek-error-box{border-color:#70413b;background:#2d2020;color:#ffb8ac}
+        .login-minimal .login-security{margin-top:22px;color:#718287}
+        .login-minimal .login-security svg{color:#dc7448}
+        .login-minimal .login-submit-spinner{border-color:rgba(255,255,255,.28);border-top-color:#fff}
+        @media(max-width:700px){.ktek-login-overlay{justify-content:center;padding:14px;background:rgba(7,15,18,.7)}.ktek-login-card.login-premium.login-minimal{padding:32px 27px 28px}}
+
     </style>
 </head>
 <body>
@@ -1487,9 +1511,9 @@
     <!-- ===== FIREBASE AUTHENTICATION SCREEN ===== -->
     <div id="ktekLoginOverlay" class="ktek-login-overlay" role="dialog" aria-modal="true" aria-labelledby="ktekLoginTitle">
         <div class="ktek-login-card login-premium login-minimal">
-            <header class="login-minimal-brand"><span class="login-minimal-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9l5 3V8l5 3V5h4v8l2 1v5H4Z"/><path d="M8 16h2m3 0h2m2-14h3" stroke-linecap="round"/></svg></span><div><strong>КТЭК</strong><span>Информационная система тепловых сетей</span></div></header>
+            <header class="login-minimal-brand"><span class="login-minimal-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9l5 3V8l5 3V5h4v8l2 1v5H4Z"/><path d="M8 16h2m3 0h2m2-14h3" stroke-linecap="round"/></svg></span><div><strong>КТЭК</strong><span>Тепловые сети · Костанай</span></div></header>
             <section class="login-form-side">
-                <div class="ktek-login-head"><h1 class="ktek-login-title" id="ktekLoginTitle">Вход в систему</h1><p class="ktek-login-sub">Используйте рабочую учётную запись.</p></div>
+                <div class="ktek-login-head"><h1 class="ktek-login-title" id="ktekLoginTitle">Авторизация</h1><p class="ktek-login-sub">Войдите для доступа к диспетчерской карте.</p></div>
                 <form id="ktekLoginForm">
                     <div class="ktek-error-box" id="ktekLoginError" role="alert"></div>
                     <div class="ktek-form-group"><label class="ktek-form-label" for="ktekLoginEmail">Рабочая почта</label><div class="login-input-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m4 6 8 6 8-6"/></svg><input id="ktekLoginEmail" type="email" class="ktek-input" placeholder="operator@ktek.kz" required autocomplete="email" autofocus /></div></div>
