@@ -119,6 +119,37 @@
             outline-offset: 3px;
         }
 
+        .network-object-unconnected .map-marker__outer,
+        .network-object-unconnected .heat-source-marker__pin {
+            animation: unconnectedPulse 1.8s ease-in-out infinite;
+            box-shadow: 0 0 0 4px rgba(239,68,68,.25), 0 0 22px rgba(239,68,68,.8) !important;
+        }
+
+        @keyframes unconnectedPulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.35); }
+        }
+
+        .object-placement-marker { background: transparent !important; border: 0 !important; }
+        .object-placement-pin {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            background: #ff6b24;
+            color: #fff;
+            box-shadow: 0 0 0 7px rgba(255,107,36,.22), 0 8px 24px rgba(72,28,7,.42);
+            font-size: 20px;
+            font-weight: 900;
+            animation: placementPulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes placementPulse { 50% { transform: scale(1.1); } }
+
+        .object-quick-card { width: min(410px, calc(100vw - 24px)); }
+
         .heat-source-delete {
             width: 100%;
             margin-top: 12px;
@@ -1605,7 +1636,7 @@
 
     <!-- ===== MODAL: ДОБАВЛЕНИЕ ОБЪЕКТА ТЕПЛОВОЙ СЕТИ ===== -->
     <div id="addObjectModal" class="ktek-modal-overlay hidden">
-        <div class="ktek-modal-card">
+        <div class="ktek-modal-card object-quick-card">
             <div class="ktek-modal-header">
                 <h3 class="ktek-modal-title" style="color:#c084fc;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
@@ -1618,7 +1649,7 @@
             <form id="objectForm">
                 <div class="ktek-form-group">
                     <label class="ktek-form-label">Наименование объекта</label>
-                    <input id="objNameInput" type="text" class="ktek-input" placeholder="БМK-Юбилейный-2, Котел ст. №7..." required />
+                    <input id="objNameInput" type="text" class="ktek-input" placeholder="Например, ТК-214" required />
                 </div>
                 <div class="ktek-grid-2" style="margin-bottom:12px;">
                     <div>
@@ -1644,37 +1675,10 @@
                         </select>
                     </div>
                 </div>
-                <div class="ktek-form-group" style="position:relative;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                        <label class="ktek-form-label" style="margin:0;">Адрес привязки</label>
-                        <button type="button" id="btnPickObjectOnMap" style="background:transparent;border:0;color:#c084fc;font-size:11px;font-weight:700;cursor:pointer;">Указать на карте</button>
-                    </div>
-                    <input id="objAddressInput" type="text" class="ktek-input" placeholder="Начните ввод адреса или укажите на карте..." autocomplete="off" required />
-                    <div id="objAddressDropdown" class="suggestions-dropdown" style="display:none;"></div>
-                </div>
+                <input type="hidden" id="objAddressInput" />
+                <div id="objAddressDropdown" style="display:none;"></div>
                 <input type="hidden" id="objLat" />
                 <input type="hidden" id="objLng" />
-                <div id="objCoordsStatus" style="font-size:11px;color:#fbbf24;background:rgba(245,158,11,0.1);padding:6px 10px;border-radius:8px;margin-bottom:12px;border:1px solid rgba(245,158,11,0.25);">
-                    Выберите адрес или укажите точку кликом на карте
-                </div>
-                <div class="ktek-grid-3" style="margin-bottom:14px;">
-                    <div>
-                        <label class="ktek-form-label">Мощность</label>
-                        <input id="objPowerInput" type="text" class="ktek-input" placeholder="25 Гкал/ч" />
-                    </div>
-                    <div>
-                        <label class="ktek-form-label">Расход (G)</label>
-                        <input id="objFlowInput" type="text" class="ktek-input" placeholder="400 т/ч" />
-                    </div>
-                    <div>
-                        <label class="ktek-form-label">Темп. T1</label>
-                        <input id="objT1Input" type="text" class="ktek-input" placeholder="95 °C" />
-                    </div>
-                </div>
-                <div style="background:rgba(147,51,234,0.12);padding:10px;border-radius:9px;border:1px solid rgba(147,51,234,0.3);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-                    <input type="checkbox" id="objAutoDrawPipe" checked style="width:16px;height:16px;" />
-                    <label for="objAutoDrawPipe" style="font-size:11px;color:#e9d5ff;cursor:pointer;">Сразу начать соединение от нового объекта</label>
-                </div>
                 <div style="display:flex;gap:8px;">
                     <button type="button" onclick="window.ktekCloseModal('addObjectModal')" style="flex:1;padding:10px;background:#334155;border:0;color:#cbd5e1;border-radius:9px;font-weight:700;cursor:pointer;">Отмена</button>
                     <button type="submit" style="flex:1;padding:10px;background:#8b5cf6;border:0;color:#fff;border-radius:9px;font-weight:800;cursor:pointer;">Сохранить объект</button>
@@ -2753,7 +2757,7 @@
                 });
                 polyline.on("click", event => {
                     if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
-                    if (window.ktekEditorHandleTarget?.(lineTarget)) return;
+                    if (window.ktekEditorHandleTarget?.(lineTarget, event.latlng)) return;
                     openCard(line, "Участок тепловой сети", polyline);
                 });
                 polyline.on("mouseover", () => {
@@ -2806,7 +2810,7 @@
                 });
                 marker.on("click", event => {
                     if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
-                    if (window.ktekEditorHandleTarget?.(sourceTarget)) return;
+                    if (window.ktekEditorHandleTarget?.(sourceTarget, event.latlng)) return;
                     openCard(source, "Теплоисточник", marker);
                 });
                 marker.on("mouseover", () => {
@@ -2860,7 +2864,7 @@
                 });
                 marker.on("click", event => {
                     if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
-                    if (window.ktekEditorHandleTarget?.(pointTarget)) return;
+                    if (window.ktekEditorHandleTarget?.(pointTarget, event.latlng)) return;
                     openCard(object, "Объект тепловой сети", marker);
                 });
                 marker.on("mouseover", () => {
@@ -3053,6 +3057,9 @@
         let networkEditorConnectionStart = null;
         let deletedBaseObjectIds = new Set();
         let baseObjectPositions = new Map();
+        let objectPlacementStage = null;
+        let objectPlacementPoint = null;
+        let objectPlacementMarker = null;
 
         const customObjectTypes = {
             boiler: { label: "Котельная / ТЭЦ", color: "#ff6b24", source: true },
@@ -3069,6 +3076,7 @@
 
         const editorDeleteBtn = document.getElementById("networkEditorDelete");
         const editorConnectBtn = document.getElementById("networkEditorConnect");
+        const editorAddBtn = document.getElementById("networkEditorAdd");
 
         function editorSafeKey(value) {
             return String(value || "object").replace(/[.#$\[\]\/]/g, "_");
@@ -3105,6 +3113,52 @@
             document.body.classList.toggle("is-editing-network", networkEditorEnabled);
             editorConnectBtn.classList.toggle("is-active", networkEditorEnabled && networkEditorAction === "connect");
             editorConnectBtn.textContent = networkEditorConnectionStart ? "Выберите второй" : "Соединить";
+            editorAddBtn.classList.toggle("is-active", Boolean(objectPlacementStage));
+            editorAddBtn.textContent = objectPlacementStage === "confirm" ? "Подтвердите точку" : (objectPlacementStage ? "Укажите точку" : "+ Добавить объект");
+        }
+
+        window.ktekCancelObjectPlacement = function() {
+            objectPlacementStage = null;
+            objectPlacementPoint = null;
+            if (objectPlacementMarker) {
+                map.removeLayer(objectPlacementMarker);
+                objectPlacementMarker = null;
+            }
+            updateNetworkEditorUi();
+        };
+
+        function confirmObjectPlacement() {
+            if (!objectPlacementPoint) return;
+            document.getElementById("objLat").value = Number(objectPlacementPoint.lat.toFixed(6));
+            document.getElementById("objLng").value = Number(objectPlacementPoint.lng.toFixed(6));
+            document.getElementById("objAddressInput").value = `Точка ${objectPlacementPoint.lat.toFixed(5)}, ${objectPlacementPoint.lng.toFixed(5)}`;
+            objectPlacementStage = "form";
+            if (objectPlacementMarker) {
+                map.removeLayer(objectPlacementMarker);
+                objectPlacementMarker = null;
+            }
+            updateNetworkEditorUi();
+            window.ktekOpenModal("addObjectModal");
+            window.setTimeout(() => document.getElementById("objNameInput")?.focus(), 80);
+        }
+
+        function placeObjectPreview(latlng) {
+            objectPlacementPoint = L.latLng(latlng);
+            const icon = L.divIcon({
+                className: "object-placement-marker",
+                html: '<span class="object-placement-pin">✓</span>',
+                iconSize: [38, 38],
+                iconAnchor: [19, 19]
+            });
+            if (objectPlacementMarker) map.removeLayer(objectPlacementMarker);
+            objectPlacementMarker = L.marker(objectPlacementPoint, { icon, zIndexOffset: 1600 }).addTo(map);
+            objectPlacementMarker.bindTooltip("Нажмите ещё раз, чтобы подтвердить", { permanent: true, direction: "top", offset: [0, -23], className: "object-tooltip" });
+            objectPlacementMarker.on("click", event => {
+                if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+                confirmObjectPlacement();
+            });
+            objectPlacementStage = "confirm";
+            updateNetworkEditorUi();
         }
 
         window.ktekNetworkEditorSetEnabled = function(enabled) {
@@ -3115,12 +3169,21 @@
                 clearEditorSelectionStyle();
                 networkEditorSelected = null;
                 editorDeleteBtn.disabled = true;
+                window.ktekCancelObjectPlacement?.();
             }
             updateNetworkEditorUi();
         };
 
-        window.ktekEditorHandleTarget = function(target) {
+        window.ktekEditorHandleTarget = function(target, eventLatLng) {
             if (!networkEditorEnabled) return false;
+            if (objectPlacementStage === "pick") {
+                placeObjectPreview(eventLatLng || editorTargetCenter(target));
+                return true;
+            }
+            if (objectPlacementStage === "confirm") {
+                confirmObjectPlacement();
+                return true;
+            }
             selectEditorTarget(target);
             if (networkEditorAction !== "connect") return true;
             const center = editorTargetCenter(target);
@@ -3231,12 +3294,19 @@
             return true;
         };
 
-        document.getElementById("networkEditorAdd").addEventListener("click", () => {
+        editorAddBtn.addEventListener("click", () => {
             if (!networkEditorEnabled) {
                 window.ktekSetSourceDragMode?.(true);
                 window.ktekNetworkEditorSetEnabled(true);
             }
-            window.ktekOpenModal("addObjectModal");
+            if (objectPlacementStage) {
+                window.ktekCancelObjectPlacement();
+                return;
+            }
+            networkEditorAction = "select";
+            networkEditorConnectionStart = null;
+            objectPlacementStage = "pick";
+            updateNetworkEditorUi();
         });
 
         editorConnectBtn.addEventListener("click", () => {
@@ -3281,6 +3351,50 @@
             const projPt = L.point(vPt.x + t * (wPt.x - vPt.x), vPt.y + t * (wPt.y - vPt.y));
             const projLatLng = map.layerPointToLatLng(projPt);
             return map.distance(p, projLatLng);
+        }
+
+        function estimateObjectFromNearbyTwin(lat, lng) {
+            const point = L.latLng(lat, lng);
+            let nearest = null;
+            let nearestDistance = Infinity;
+
+            (window.ktekSelectableObjects || []).forEach(target => {
+                if (target.kind !== "line" || !target.layer?.getLatLngs) return;
+                if (target.editorOrigin === "base" && deletedBaseObjectIds.has(target.object.id)) return;
+                const points = target.layer.getLatLngs().flat(Infinity).filter(item => Number.isFinite(item?.lat) && Number.isFinite(item?.lng));
+                for (let i = 0; i < points.length - 1; i++) {
+                    const distance = getDistanceToSegmentM(point, points[i], points[i + 1]);
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearest = target;
+                    }
+                }
+            });
+
+            if (!nearest || nearestDistance > 140) {
+                return { connected: false, distanceM: nearest ? Math.round(nearestDistance) : null };
+            }
+
+            const live = twinSnapshot?.objects?.get?.(nearest.object.id);
+            const seed = [...String(nearest.object.id)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+            const supply = Number(Number(live?.supply ?? (76 + (seed % 140) / 10)).toFixed(1));
+            const returnTemperature = Number(Number(live?.returnTemperature ?? (supply - 18 - (seed % 50) / 10)).toFixed(1));
+            const pressure = Number(Number(live?.pressure ?? (5.2 + (seed % 24) / 10)).toFixed(2));
+            const flow = Number(Number(live?.flow ?? (150 + seed % 360)).toFixed(1));
+            const powerMw = Number((flow * 4.186 * Math.max(1, supply - returnTemperature) / 3600).toFixed(2));
+
+            return {
+                connected: true,
+                pipelineId: nearest.object.id,
+                pipelineName: nearest.object.name,
+                distanceM: Math.round(nearestDistance),
+                pressureBar: pressure,
+                supplyTemperatureC: supply,
+                returnTemperatureC: returnTemperature,
+                flowTph: flow,
+                powerMw,
+                source: live ? "digital-twin-live" : "digital-twin-estimate"
+            };
         }
 
         window.autoCaptureHousesAlongRoute = function(radiusM = 150) {
@@ -3533,6 +3647,7 @@
             document.getElementById(id).classList.add("hidden");
             document.getElementById("incAddressDropdown").style.display = "none";
             document.getElementById("objAddressDropdown").style.display = "none";
+            if (id === "addObjectModal") window.ktekCancelObjectPlacement?.();
         };
 
         window.ktekPickOnMap = (mode) => {
@@ -3551,7 +3666,6 @@
 
         document.getElementById("btnOpenAddIncident").addEventListener("click", () => window.ktekOpenModal("addIncidentModal"));
         document.getElementById("btnPickIncidentOnMap").addEventListener("click", () => window.ktekPickOnMap("incident"));
-        document.getElementById("btnPickObjectOnMap").addEventListener("click", () => window.ktekPickOnMap("object"));
         document.getElementById("btnCancelMapPick").addEventListener("click", () => window.ktekCancelMapPick());
         document.getElementById("btnUndoDrawPoint").addEventListener("click", () => window.ktekUndoDrawPoint());
         document.getElementById("btnFinishDrawPipe").addEventListener("click", () => window.ktekFinishDrawPipe());
@@ -3615,14 +3729,11 @@
                 document.getElementById("objAddressInput").value = addr;
                 document.getElementById("objLat").value = lat;
                 document.getElementById("objLng").value = lng;
-                document.getElementById("objCoordsStatus").style.color = "#c084fc";
-                document.getElementById("objCoordsStatus").innerHTML = `Привязано к: <b>${addr}</b> (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
                 document.getElementById("objAddressDropdown").style.display = "none";
             }
         };
 
         document.getElementById("incAddressInput").addEventListener("input", (e) => window.ktekSearchAddress(e.target.value, "incident"));
-        document.getElementById("objAddressInput").addEventListener("input", (e) => window.ktekSearchAddress(e.target.value, "object"));
 
         // ── 4. CAD PIPELINE DRAWING ENGINE ──
         window.ktekStartFreeDrawing = function() {
@@ -3808,42 +3919,50 @@
             e.preventDefault();
             const lat = parseFloat(document.getElementById("objLat").value);
             const lng = parseFloat(document.getElementById("objLng").value);
-            const autoDraw = document.getElementById("objAutoDrawPipe").checked;
 
             if (!lat || !lng) {
-                alert("Пожалуйста, выберите адрес из подсказок или укажите точку на карте!");
+                alert("Сначала выберите и подтвердите точку на карте.");
                 return;
             }
+
+            const estimatedTelemetry = estimateObjectFromNearbyTwin(lat, lng);
 
             const newObj = {
                 name: document.getElementById("objNameInput").value,
                 address: document.getElementById("objAddressInput").value,
                 type: document.getElementById("objTypeInput").value,
                 status: document.getElementById("objStatusInput").value,
-                power: document.getElementById("objPowerInput").value || "20 Гкал/ч",
-                flow: document.getElementById("objFlowInput").value || "400 т/ч",
-                t1: document.getElementById("objT1Input").value || "95 °C",
+                connectionStatus: estimatedTelemetry.connected ? "connected" : "unconnected",
+                estimatedTelemetry,
+                power: estimatedTelemetry.connected ? `${estimatedTelemetry.powerMw} МВт` : null,
+                flow: estimatedTelemetry.connected ? `${estimatedTelemetry.flowTph} т/ч` : null,
+                t1: estimatedTelemetry.connected ? `${estimatedTelemetry.supplyTemperatureC} °C` : null,
                 lat, lng,
                 createdAt: new Date().toISOString(),
                 author: currentUserProfile?.email || "Admin"
             };
 
-            const newRef = await push(ref(fbDb, "custom_objects"), newObj);
+            await push(ref(fbDb, "custom_objects"), newObj);
             window.ktekCloseModal("addObjectModal");
             document.getElementById("objNameInput").value = "";
             document.getElementById("objAddressInput").value = "";
-            if (tempPickMarker) { map.removeLayer(tempPickMarker); tempPickMarker = null; }
             map.setView([lat, lng], 15);
-
-            if (autoDraw) {
-                window.ktekStartDrawFromSource(newRef.key, newObj.name, lat, lng);
-            }
         });
 
         // ── 6. MAP CLICK HANDLER ──
         map.on("click", (e) => {
             const lat = Number(e.latlng.lat.toFixed(6));
             const lng = Number(e.latlng.lng.toFixed(6));
+
+            if (objectPlacementStage === "pick") {
+                placeObjectPreview(e.latlng);
+                return;
+            }
+
+            if (objectPlacementStage === "confirm") {
+                confirmObjectPlacement();
+                return;
+            }
 
             if (isDrawingPipe) {
                 drawingPoints.push([lat, lng]);
@@ -3864,15 +3983,6 @@
                         document.getElementById("incAddressInput").value = `Точка на карте (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
                     }
                     window.ktekOpenModal("addIncidentModal");
-                } else if (pickingMode === 'object') {
-                    document.getElementById("objLat").value = lat;
-                    document.getElementById("objLng").value = lng;
-                    document.getElementById("objCoordsStatus").style.color = "#c084fc";
-                    document.getElementById("objCoordsStatus").innerHTML = `Точка на карте: <b>${lat}, ${lng}</b>`;
-                    if (!document.getElementById("objAddressInput").value) {
-                        document.getElementById("objAddressInput").value = `Участок (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-                    }
-                    window.ktekOpenModal("addObjectModal");
                 }
                 window.ktekCancelMapPick();
             }
@@ -3925,7 +4035,14 @@
                         const isPlanned = obj.status === 'planned';
                         const typeConfig = customObjectTypes[obj.type] || customObjectTypes.chamber;
                         const isHeatSource = Boolean(typeConfig.source);
-                        const safe = isPlanned ? "#eab308" : typeConfig.color;
+                        const isUnconnected = obj.connectionStatus === "unconnected";
+                        const safe = isUnconnected ? "#ef4444" : (isPlanned ? "#eab308" : typeConfig.color);
+                        const telemetry = obj.estimatedTelemetry || {};
+                        const calculatedDescription = !obj.connectionStatus
+                            ? `Мощность: ${obj.power || '—'}, расход: ${obj.flow || '—'}, температура подачи: ${obj.t1 || '—'}.`
+                            : (isUnconnected
+                                ? "Не подключён к тепловой сети. Расчётные параметры недоступны."
+                                : `Расчёт от «${telemetry.pipelineName || 'ближайшего участка'}» (${telemetry.distanceM ?? 0} м). Давление ${telemetry.pressureBar ?? '—'} бар, подача ${telemetry.supplyTemperatureC ?? '—'} °C, обратка ${telemetry.returnTemperatureC ?? '—'} °C, расход ${telemetry.flowTph ?? '—'} т/ч, мощность ${telemetry.powerMw ?? '—'} МВт.`);
 
                         const customSourceObj = {
                             id: "custom_" + id,
@@ -3939,13 +4056,21 @@
                             color: safe,
                             accuracy: "manual",
                             folder: isPlanned ? "Проектируемые объекты" : "Добавленные объекты сети",
-                            description: `Мощность: ${obj.power || '20 Гкал/ч'}, Расход: ${obj.flow || '400 т/ч'}, Режим: ${isPlanned ? 'В планах (Моделирование)' : 'В работе'}`,
+                            description: `${calculatedDescription} Режим: ${isPlanned ? 'проектируемый' : 'в работе'}.`,
+                            connectionStatus: obj.connectionStatus || "legacy",
+                            estimatedTelemetry: telemetry,
                             defects: []
                         };
 
                         const icon = isHeatSource ? heatSourceIcon(customSourceObj) : markerIcon(customSourceObj);
                         const targetGroup = isHeatSource ? heatSourcesLayer : objectsLayer;
                         const marker = L.marker([obj.lat, obj.lng], { icon, title: obj.name }).addTo(targetGroup);
+                        if (isUnconnected) marker.getElement()?.classList.add("network-object-unconnected");
+                        marker.bindTooltip(isUnconnected ? `${obj.name} · не подключён к сети` : obj.name, {
+                            className: "object-tooltip",
+                            direction: "top",
+                            offset: [0, isHeatSource ? -25 : -7]
+                        });
 
                         const target = {
                             kind: "point",
@@ -3964,7 +4089,7 @@
 
                         marker.on("click", (event) => {
                             if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
-                            if (window.ktekEditorHandleTarget?.(target)) return;
+                            if (window.ktekEditorHandleTarget?.(target, event.latlng)) return;
                             openCard(customSourceObj, typeConfig.label, marker);
                             const drawBtn = document.getElementById("btnDrawPipeFromCard");
                             if (drawBtn) drawBtn.hidden = false;
@@ -4033,7 +4158,7 @@
                         customPipeLinesData[id] = pipe;
                         polyline.on("click", (event) => {
                             if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
-                            if (window.ktekEditorHandleTarget?.(target)) return;
+                            if (window.ktekEditorHandleTarget?.(target, event.latlng)) return;
                             openCard(customPipeObj, "Участок тепловой сети", polyline);
                             if (pipe.connectedHouses && pipe.connectedHouses.length) {
                                 window.highlightPipelineHouses(id);
