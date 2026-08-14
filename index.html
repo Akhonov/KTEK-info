@@ -73,8 +73,8 @@
             position: absolute;
             top: 55px;
             right: 0;
-            width: min(330px, calc(100vw - 24px));
-            padding: 16px;
+            width: min(270px, calc(100vw - 24px));
+            padding: 9px;
             border: 1px solid rgba(28, 39, 49, .1);
             border-radius: 17px;
             background: rgba(255, 255, 255, .98);
@@ -92,46 +92,6 @@
             transform: translateY(0) scale(1);
         }
 
-        .source-edit-panel h2 { margin: 0 0 7px; color: #172229; font-size: 16px; }
-        .source-edit-panel p { margin: 0 0 13px; color: #68777e; font-size: 12px; line-height: 1.45; }
-
-        .source-edit-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-            padding: 9px 11px;
-            border-radius: 10px;
-            background: #f1f4f5;
-            color: #4b5a61;
-            font-size: 11px;
-            font-weight: 750;
-        }
-
-        .source-edit-status::before {
-            content: "";
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #a7b2b7;
-        }
-
-        body.is-editing-sources .source-edit-status { background: #fff1e9; color: #c34c11; }
-        body.is-editing-sources .source-edit-status::before { background: #ff6b24; box-shadow: 0 0 0 4px rgba(255,107,36,.15); }
-
-        .source-edit-selection {
-            min-height: 42px;
-            margin-bottom: 10px;
-            padding: 9px 11px;
-            border: 1px solid #e1e7ea;
-            border-radius: 10px;
-            background: #fafcfc;
-            color: #68777e;
-            font-size: 11px;
-            line-height: 1.4;
-        }
-
-        .source-edit-selection strong { display: block; color: #172229; font-size: 12px; }
         .source-edit-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .source-edit-action {
             min-height: 39px;
@@ -146,7 +106,6 @@
             font-weight: 800;
         }
 
-        .source-edit-action.primary { grid-column: 1 / -1; background: #ff6b24; color: #fff; }
         .source-edit-action.is-active { background: #6d28d9; color: #fff; box-shadow: 0 4px 12px rgba(109,40,217,.22); }
         .source-edit-action.danger { background: #fff0ef; color: #c62c21; }
         .source-edit-action:disabled { opacity: .45; cursor: not-allowed; filter: none; }
@@ -181,10 +140,6 @@
         body.is-editing-sources .leaflet-drag-target .heat-source-marker { cursor: grabbing !important; }
         body.dark .source-edit-toggle { background: rgba(37, 46, 51, .95); color: #fff; border-color: #46545b; }
         body.dark .source-edit-panel { background: rgba(37, 46, 51, .98); border-color: #46545b; }
-        body.dark .source-edit-panel h2 { color: #fff; }
-        body.dark .source-edit-panel p { color: #b7c1c6; }
-        body.dark .source-edit-selection { background: #1d292e; border-color: #46545b; color: #aab7bd; }
-        body.dark .source-edit-selection strong { color: #fff; }
 
         .twin-control { position: relative; }
 
@@ -1854,16 +1809,11 @@
                 </svg>
             </button>
             <section class="source-edit-panel" id="sourceEditPanel" aria-label="Редактор тепловой сети">
-                <h2>Редактор сети</h2>
-                <p>Добавляйте объекты, соединяйте их с реальными узлами и удаляйте выбранные элементы. Все изменения сохраняются в базе.</p>
-                <div class="source-edit-status" id="sourceEditStatus">Редактор выключен</div>
-                <div class="source-edit-selection" id="networkEditorSelection">Включите редактор, затем выберите объект на карте.</div>
                 <div class="source-edit-actions">
-                    <button class="source-edit-action primary" id="sourceEditMode" type="button">Включить редактор</button>
                     <button class="source-edit-action" id="networkEditorAdd" type="button">+ Добавить объект</button>
-                    <button class="source-edit-action" id="networkEditorConnect" type="button">Соединить объекты</button>
-                    <button class="source-edit-action danger" id="networkEditorDelete" type="button" disabled>Удалить выбранное</button>
-                    <button class="source-edit-action" id="sourceReset" type="button">Восстановить скрытые</button>
+                    <button class="source-edit-action" id="networkEditorConnect" type="button">Соединить</button>
+                    <button class="source-edit-action danger" id="networkEditorDelete" type="button" disabled>Удалить</button>
+                    <button class="source-edit-action" id="sourceReset" type="button">Восстановить</button>
                     <button class="source-edit-action" id="sourceExport" type="button">Скачать JSON</button>
                 </div>
             </section>
@@ -2074,8 +2024,6 @@
         const sourceEditor = document.getElementById("sourceEditor");
         const sourceEditToggle = document.getElementById("sourceEditToggle");
         const sourceEditPanel = document.getElementById("sourceEditPanel");
-        const sourceEditStatus = document.getElementById("sourceEditStatus");
-        const sourceEditMode = document.getElementById("sourceEditMode");
         const sourceExport = document.getElementById("sourceExport");
         const sourceReset = document.getElementById("sourceReset");
         const twinControl = document.getElementById("twinControl");
@@ -2114,6 +2062,7 @@
         }
 
         function closeSourceEditor() {
+            if (sourceEditModeEnabled) return;
             sourceEditor.classList.remove("is-open");
             sourceEditToggle.setAttribute("aria-expanded", "false");
         }
@@ -2238,12 +2187,7 @@
         }
 
         function updateSourceEditStatus() {
-            const count = Object.keys(sourcePositionOverrides).length;
-            const deletedCount = deletedSourceIds.size;
-            sourceEditStatus.textContent = sourceEditModeEnabled
-                ? `Редактор включён · перемещено: ${count} · удалено: ${deletedCount}`
-                : `Редактор выключен · перемещено: ${count} · удалено: ${deletedCount}`;
-            sourceEditMode.textContent = sourceEditModeEnabled ? "Завершить перемещение" : "Включить перемещение";
+            sourceEditToggle.setAttribute("aria-pressed", String(sourceEditModeEnabled));
         }
 
         function updateMapCounter() {
@@ -3000,17 +2944,16 @@
 
         sourceEditToggle.addEventListener("click", event => {
             event.stopPropagation();
-            const isOpen = sourceEditor.classList.toggle("is-open");
-            sourceEditToggle.setAttribute("aria-expanded", String(isOpen));
+            const enabled = !sourceEditModeEnabled;
+            setSourceEditMode(enabled);
+            window.ktekNetworkEditorSetEnabled?.(enabled);
+            sourceEditor.classList.toggle("is-open", enabled);
+            sourceEditToggle.setAttribute("aria-expanded", String(enabled));
             closeAddressSearch();
             closeMapStyleMenu();
             closeTwinPanel();
         });
         sourceEditPanel.addEventListener("click", event => event.stopPropagation());
-        sourceEditMode.addEventListener("click", () => {
-            setSourceEditMode(!sourceEditModeEnabled);
-            window.ktekNetworkEditorSetEnabled?.(sourceEditModeEnabled);
-        });
         sourceExport.addEventListener("click", () => {
             if (!window.ktekExportNetworkEditor?.()) exportSourcePositions();
         });
@@ -3141,7 +3084,6 @@
             consumer: { label: "Ввод потребителя", color: "#22c55e" }
         };
 
-        const editorSelectionEl = document.getElementById("networkEditorSelection");
         const editorDeleteBtn = document.getElementById("networkEditorDelete");
         const editorConnectBtn = document.getElementById("networkEditorConnect");
 
@@ -3172,18 +3114,14 @@
             } else {
                 target.layer.getElement?.()?.classList.add("editor-selected");
             }
-            editorSelectionEl.innerHTML = `<strong>${target.object.name || "Объект без названия"}</strong>${target.type || "Объект тепловой сети"}`;
             editorDeleteBtn.disabled = false;
+            editorDeleteBtn.title = `Удалить: ${target.object.name || "объект"}`;
         }
 
-        function updateNetworkEditorUi(message) {
+        function updateNetworkEditorUi() {
             document.body.classList.toggle("is-editing-network", networkEditorEnabled);
-            document.getElementById("sourceEditMode").textContent = networkEditorEnabled ? "Завершить редактирование" : "Включить редактор";
-            document.getElementById("sourceEditStatus").textContent = networkEditorEnabled
-                ? (networkEditorAction === "connect" ? "Соединение объектов · выберите два узла" : "Редактор включён · выберите объект")
-                : "Редактор выключен";
             editorConnectBtn.classList.toggle("is-active", networkEditorEnabled && networkEditorAction === "connect");
-            if (message) editorSelectionEl.innerHTML = message;
+            editorConnectBtn.textContent = networkEditorConnectionStart ? "Выберите второй" : "Соединить";
         }
 
         window.ktekNetworkEditorSetEnabled = function(enabled) {
@@ -3195,7 +3133,7 @@
                 networkEditorSelected = null;
                 editorDeleteBtn.disabled = true;
             }
-            updateNetworkEditorUi(networkEditorEnabled ? "Нажмите на любой объект или участок сети." : "Включите редактор, затем выберите объект на карте.");
+            updateNetworkEditorUi();
         };
 
         window.ktekEditorHandleTarget = function(target) {
@@ -3206,11 +3144,10 @@
             if (!center) return true;
             if (!networkEditorConnectionStart) {
                 networkEditorConnectionStart = target;
-                editorSelectionEl.innerHTML = `<strong>Начало: ${target.object.name}</strong>Теперь выберите конечный реальный или добавленный объект.`;
+                updateNetworkEditorUi();
                 return true;
             }
             if (networkEditorConnectionStart === target) {
-                editorSelectionEl.innerHTML = `<strong>Это уже начальная точка</strong>Выберите другой объект.`;
                 return true;
             }
             const start = networkEditorConnectionStart;
@@ -3235,10 +3172,10 @@
             push(ref(fbDb, "custom_pipelines"), pipe).then(() => {
                 networkEditorConnectionStart = null;
                 networkEditorAction = "select";
-                updateNetworkEditorUi(`<strong>Соединение сохранено</strong>${start.object.name} — ${target.object.name} · ${distance} м`);
+                updateNetworkEditorUi();
             }).catch(error => {
                 console.error("Connection save error:", error);
-                editorSelectionEl.innerHTML = "Не удалось сохранить соединение. Проверьте доступ к базе.";
+                window.alert("Не удалось сохранить соединение. Проверьте доступ к базе.");
             });
             return true;
         };
@@ -3277,7 +3214,7 @@
             await remove(ref(fbDb, "editor_deleted_objects"));
             deletedBaseObjectIds = new Set();
             window.ktekApplyEditorState();
-            updateNetworkEditorUi("<strong>Исходные объекты восстановлены</strong>Добавленные объекты и связи не изменены.");
+            updateNetworkEditorUi();
         };
 
         window.ktekExportNetworkEditor = function() {
@@ -3326,9 +3263,7 @@
             }
             networkEditorAction = networkEditorAction === "connect" ? "select" : "connect";
             networkEditorConnectionStart = null;
-            updateNetworkEditorUi(networkEditorAction === "connect"
-                ? "<strong>Шаг 1 из 2</strong>Выберите начальный объект на карте."
-                : "Нажмите на любой объект или участок сети.");
+            updateNetworkEditorUi();
         });
 
         editorDeleteBtn.addEventListener("click", async () => {
@@ -3348,7 +3283,8 @@
             clearEditorSelectionStyle();
             networkEditorSelected = null;
             editorDeleteBtn.disabled = true;
-            updateNetworkEditorUi("<strong>Объект удалён</strong>Изменение сохранено в базе.");
+            editorDeleteBtn.title = "Сначала выберите объект на карте";
+            updateNetworkEditorUi();
         });
 
         function getDistanceToSegmentM(p, v, w) {
