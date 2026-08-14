@@ -601,104 +601,6 @@
             font-size: 12px;
         }
 
-        .map-crosshair {
-            position: fixed;
-            z-index: 850;
-            top: 50%;
-            left: 50%;
-            width: 42px;
-            height: 42px;
-            pointer-events: none;
-            transform: translate(-50%, -50%);
-            filter: drop-shadow(0 1px 2px rgba(255, 255, 255, .95)) drop-shadow(0 1px 3px rgba(0, 0, 0, .45));
-        }
-
-        .map-crosshair::before,
-        .map-crosshair::after {
-            content: "";
-            position: absolute;
-            background: #18242a;
-            border-radius: 2px;
-        }
-
-        .map-crosshair::before {
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            width: 2px;
-            transform: translateX(-50%);
-        }
-
-        .map-crosshair::after {
-            top: 50%;
-            right: 0;
-            left: 0;
-            height: 2px;
-            transform: translateY(-50%);
-        }
-
-        .map-crosshair__ring {
-            position: absolute;
-            z-index: 1;
-            top: 50%;
-            left: 50%;
-            width: 14px;
-            height: 14px;
-            border: 2px solid #18242a;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, .22);
-            transform: translate(-50%, -50%);
-        }
-
-        .map-crosshair__dot {
-            position: absolute;
-            z-index: 2;
-            top: 50%;
-            left: 50%;
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: #e53935;
-            transform: translate(-50%, -50%);
-        }
-
-        .map-crosshair.is-locked::before,
-        .map-crosshair.is-locked::after { background: #00a86b; }
-        .map-crosshair.is-locked .map-crosshair__ring {
-            border-color: #00a86b;
-            background: rgba(0, 168, 107, .16);
-            transform: translate(-50%, -50%) scale(1.18);
-        }
-        .map-crosshair.is-locked .map-crosshair__dot { background: #00a86b; }
-
-        .crosshair-target {
-            position: fixed;
-            z-index: 851;
-            top: calc(50% + 30px);
-            left: 50%;
-            max-width: min(320px, 76vw);
-            padding: 6px 10px;
-            border: 1px solid rgba(255, 255, 255, .7);
-            border-radius: 7px;
-            background: rgba(20, 31, 36, .9);
-            color: #fff;
-            box-shadow: 0 2px 9px rgba(0, 0, 0, .28);
-            opacity: 0;
-            overflow: hidden;
-            pointer-events: none;
-            text-overflow: ellipsis;
-            transform: translate(-50%, 4px);
-            transition: opacity .12s ease, transform .12s ease;
-            white-space: nowrap;
-            font-size: 11px;
-            font-weight: 750;
-        }
-
-        .crosshair-target.is-visible {
-            opacity: 1;
-            transform: translate(-50%, 0);
-        }
-
         .dependency-summary {
             position: fixed;
             z-index: 840;
@@ -1815,11 +1717,6 @@
 
     <div id="map" aria-label="Карта тепловых сетей Костаная"></div>
 
-    <div class="map-crosshair" aria-hidden="true">
-        <span class="map-crosshair__ring"></span>
-        <span class="map-crosshair__dot"></span>
-    </div>
-    <div class="crosshair-target" id="crosshairTarget" aria-live="polite"></div>
     <div class="dependency-summary" id="dependencySummary" aria-live="polite"></div>
 
     <div class="map-toolbar">
@@ -2044,11 +1941,9 @@
         }
         let activeTiles = tileLayers[activeStyle].addTo(map);
         let selectedLayer = null;
-        let aimedTarget = null;
         let hoveredTarget = null;
         let visibleDependencyTarget = null;
         let dependencyHideTimer = null;
-        let aimFrame = null;
         let addressDatabase = [];
         let visibleSearchResults = [];
         let activeSearchResult = -1;
@@ -2095,8 +1990,6 @@
         const defectSummary = document.getElementById("defectSummary");
         const cardDefects = document.getElementById("cardDefects");
         const mapCounter = document.getElementById("mapCounter");
-        const crosshair = document.querySelector(".map-crosshair");
-        const crosshairTarget = document.getElementById("crosshairTarget");
         const dependencySummary = document.getElementById("dependencySummary");
         const addressSearch = document.getElementById("addressSearch");
         const searchToggle = document.getElementById("searchToggle");
@@ -2204,7 +2097,7 @@
                         ? "#e32626"
                         : temperatureColor(telemetry.supply);
                     target.baseStyle.opacity = telemetry.status === "critical" ? 1 : 0.88;
-                    if (target !== aimedTarget) target.layer.setStyle(target.baseStyle);
+                    target.layer.setStyle(target.baseStyle);
                 } else {
                     const element = target.layer.getElement();
                     element?.classList.toggle("telemetry-warning", telemetry.status === "warning");
@@ -2345,15 +2238,10 @@
             heatSourcesLayer.removeLayer(entry.marker);
             const targetIndex = selectableObjects.indexOf(entry.target);
             if (targetIndex >= 0) selectableObjects.splice(targetIndex, 1);
-            if (aimedTarget === entry.target) {
-                clearAimHighlight(aimedTarget);
-                aimedTarget = null;
-            }
             activeHeatSourceId = null;
             persistSourcePositions();
             updateMapCounter();
             closeCard();
-            scheduleCrosshairUpdate();
         }
 
         function renderAddressResults(query) {
@@ -2662,40 +2550,6 @@
             heatSourceDelete.hidden = true;
         }
 
-        function pointToSegmentDistance(point, start, end) {
-            const dx = end.x - start.x;
-            const dy = end.y - start.y;
-            if (dx === 0 && dy === 0) return point.distanceTo(start);
-            const ratio = Math.max(0, Math.min(1,
-                ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)
-            ));
-            const projection = L.point(start.x + ratio * dx, start.y + ratio * dy);
-            return point.distanceTo(projection);
-        }
-
-        function targetDistance(target, center) {
-            if (target.kind === "point") {
-                return center.distanceTo(map.latLngToContainerPoint(target.latlng));
-            }
-            let minimum = Infinity;
-            const coordinates = target.object.coordinates;
-            for (let index = 1; index < coordinates.length; index += 1) {
-                const start = map.latLngToContainerPoint(coordinates[index - 1]);
-                const end = map.latLngToContainerPoint(coordinates[index]);
-                minimum = Math.min(minimum, pointToSegmentDistance(center, start, end));
-            }
-            return minimum;
-        }
-
-        function clearAimHighlight(target) {
-            if (!target) return;
-            if (target.kind === "point") {
-                target.layer.getElement()?.classList.remove("is-aimed");
-            } else {
-                target.layer.setStyle(target.baseStyle);
-            }
-        }
-
         function dependencyOrigin(target) {
             if (target.kind === "point") return target.latlng;
             const coordinates = target.object.coordinates;
@@ -2776,7 +2630,7 @@
             const leakTarget = twinSnapshot?.scenario === "leak"
                 ? selectableObjects.find(target => target.object.id === twinSnapshot.focusId)
                 : null;
-            showDependentHouses(hoveredTarget || leakTarget || aimedTarget);
+            showDependentHouses(hoveredTarget || leakTarget);
         }
 
         function scheduleDependentHousesHide() {
@@ -2785,49 +2639,6 @@
                 dependencyHideTimer = null;
                 refreshDependentHouses();
             }, 240);
-        }
-
-        function applyAimHighlight(target) {
-            if (target.kind === "point") {
-                target.layer.getElement()?.classList.add("is-aimed");
-            } else {
-                target.layer.setStyle({
-                    color: "#00A86B",
-                    weight: target.baseStyle.weight + 3,
-                    opacity: 1
-                });
-                target.layer.bringToFront();
-            }
-        }
-
-        function updateCrosshairTarget() {
-            aimFrame = null;
-            if (!selectableObjects.length) return;
-            const center = map.getSize().divideBy(2);
-            let nearest = null;
-            let nearestDistance = 30;
-
-            selectableObjects.forEach(target => {
-                const distance = targetDistance(target, center);
-                if (distance < nearestDistance) {
-                    nearest = target;
-                    nearestDistance = distance;
-                }
-            });
-
-            if (nearest === aimedTarget) return;
-            clearAimHighlight(aimedTarget);
-            aimedTarget = nearest;
-            crosshair.classList.toggle("is-locked", Boolean(nearest));
-            crosshairTarget.classList.toggle("is-visible", Boolean(nearest));
-            crosshairTarget.textContent = nearest ? `${nearest.object.name} · нажмите для справки` : "";
-            if (nearest) applyAimHighlight(nearest);
-            refreshDependentHouses();
-        }
-
-        function scheduleCrosshairUpdate() {
-            if (aimFrame !== null) return;
-            aimFrame = requestAnimationFrame(updateCrosshairTarget);
         }
 
         function openCard(object, type, layer) {
@@ -3010,7 +2821,6 @@
                     sourcePositionOverrides[source.id] = { lat: source.lat, lng: source.lng };
                     marker.setIcon(heatSourceIcon(source));
                     persistSourcePositions();
-                    scheduleCrosshairUpdate();
                 });
                 bounds.push([source.lat, source.lng]);
             });
@@ -3054,22 +2864,16 @@
             updateMapCounter();
             updateSourceEditStatus();
             initializeDigitalTwin(data);
-            scheduleCrosshairUpdate();
         }
 
         document.getElementById("cardClose").addEventListener("click", closeCard);
         heatSourceDelete.addEventListener("click", deleteActiveHeatSource);
         map.on("click", () => {
-            if (aimedTarget) {
-                openCard(aimedTarget.object, aimedTarget.type, aimedTarget.layer);
-            } else {
-                closeCard();
-            }
+            closeCard();
             closeMapStyleMenu();
             closeSourceEditor();
             closeTwinPanel();
         });
-        map.on("move zoom resize", scheduleCrosshairUpdate);
         document.addEventListener("keydown", event => {
             if (event.key === "Escape") {
                 closeCard();
@@ -3098,7 +2902,7 @@
             button.addEventListener("click", () => {
                 if (!digitalTwin) return;
                 const scenario = button.dataset.twinScenario;
-                const focus = activeCardObjectId || aimedTarget?.object?.id || hoveredTarget?.object?.id || selectableObjects[0]?.object?.id;
+                const focus = activeCardObjectId || hoveredTarget?.object?.id || selectableObjects[0]?.object?.id;
                 digitalTwin.setScenario(scenario, scenario === "leak" ? focus : null);
                 if (scenario === "leak" && focus) {
                     const target = selectableObjects.find(item => item.object.id === focus);
